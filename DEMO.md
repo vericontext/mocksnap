@@ -2,23 +2,59 @@
 
 ## 한 줄 소개
 
-> "백엔드 없이 프론트엔드 개발하세요. JSON 붙여넣으면 3초 만에 진짜 REST + GraphQL API가 생깁니다."
+> "백엔드 없이 프론트엔드 개발하세요. 말로 설명하면 3초 만에 진짜 API가 생깁니다."
 
 ---
 
-## Demo 1: JSON 붙여넣기 → 즉시 API 생성 (30초)
+## Demo 1: 말로 설명하면 API가 생긴다 (30초)
 
-**시나리오:** 프론트엔드 개발자가 쇼핑몰 앱을 만드는데, 백엔드가 아직 없다.
+**가장 쉬운 방법.** JSON을 준비할 필요도 없습니다.
 
 ### 1. http://localhost:3000 접속
 
-### 2. JSON 입력란에 아래를 붙여넣기
+### 2. "Natural Language" 탭 클릭
+
+### 3. 원하는 API를 말로 설명
+
+```
+쇼핑몰 API 만들어줘. 상품, 주문, 유저. 한국어 데이터 10건씩.
+```
+
+다른 예시들:
+```
+블로그 API — 작성자, 글, 댓글, 태그
+TODO 앱 — 프로젝트, 할일, 팀원
+음식 배달 앱 — 가게, 메뉴, 주문, 리뷰
+```
+
+### 4. "Generate API" 클릭 → 3초 후 완성
+
+AI가 알아서 결정합니다:
+- 리소스 이름과 구조 (products, orders, users)
+- 필드와 타입 (id, name, price, status...)
+- 한국어 이름, 현실적 가격, 유효 이메일 등 리얼 데이터 10건
+
+### 5. 바로 사용 가능
+
+```bash
+curl http://localhost:3001/m/{mockId}/products
+# → 한국어 상품명, 현실적 가격이 담긴 10개 상품
+```
+
+> Anthropic API Key 필요 — 페이지 상단 "Anthropic API Key" 펼쳐서 자신의 키 입력
+
+---
+
+## Demo 2: JSON이 있다면 더 빠르게 (15초)
+
+이미 원하는 데이터 형태를 알고 있을 때.
+
+### 1. "JSON" 탭에 붙여넣기
 
 ```json
 {
   "products": [
-    { "id": 1, "name": "맥북 프로 16인치", "price": 3490000, "category": "laptop" },
-    { "id": 2, "name": "아이패드 에어", "price": 929000, "category": "tablet" }
+    { "id": 1, "name": "맥북 프로", "price": 3490000, "category": "laptop" }
   ],
   "orders": [
     { "id": 1, "productId": 1, "quantity": 1, "status": "shipped" }
@@ -26,114 +62,120 @@
 }
 ```
 
-### 3. "AI data amplification" 체크 해제 → "Generate API" 클릭
+**1건만 넣어도 됩니다.** "AI data amplification" 체크하면 AI가 10건으로 늘려줍니다. API 키가 없어도 Faker.js가 필드명을 보고 자동으로 리얼 데이터를 채웁니다.
 
-### 4. 결과: 즉시 CRUD API가 생성됨
+### 2. "Generate API" → 즉시 REST + GraphQL 엔드포인트 생성
 
-```
-GET    /m/{id}/products      → 상품 목록
-GET    /m/{id}/products/1    → 상품 상세
-POST   /m/{id}/products      → 상품 추가
-PUT    /m/{id}/products/1    → 상품 수정
-DELETE /m/{id}/products/1    → 상품 삭제
-```
+### 3. Stateful — POST하면 GET에 반영됨
 
-### 5. Playground에서 바로 테스트
-
-URL 입력 → Send → 실제 데이터 반환 확인
-
-### 6. Stateful 데모
-
-터미널에서 POST로 상품 추가:
 ```bash
 curl -X POST http://localhost:3001/m/{mockId}/products \
   -H "Content-Type: application/json" \
-  -d '{"id": 3, "name": "에어팟 프로", "price": 359000, "category": "audio"}'
-```
+  -d '{"name": "에어팟 프로", "price": 359000}'
+# → createdAt, updatedAt 자동 추가됨
 
-Playground에서 다시 GET → **3개** 반환됨. "POST한 데이터가 GET에 반영됩니다."
+curl http://localhost:3001/m/{mockId}/products
+# → 에어팟 프로 포함, 총 11건
+```
 
 ---
 
-## Demo 2: 진짜 API처럼 쿼리 (30초)
+## Demo 3: 실제 API처럼 쿼리 (30초)
 
-**시나리오:** 프론트엔드에서 필터, 정렬, 페이지네이션이 필요하다.
-
-### Demo 1에서 만든 Mock으로 바로 이어서:
+프론트엔드 코드에서 바로 쓸 수 있는 수준.
 
 ```bash
-# 카테고리 필터링
-curl "http://localhost:3001/m/{mockId}/products?category=laptop"
-# → 맥북 프로만 반환
-
-# 가격 범위 필터
-curl "http://localhost:3001/m/{mockId}/products?price_gte=500000"
-# → 50만원 이상 상품만
+# 필터링
+curl ".../products?category=laptop"
+curl ".../products?price_gte=500000&price_lte=2000000"
 
 # 정렬
-curl "http://localhost:3001/m/{mockId}/products?sort=price&order=desc"
-# → 비싼 순서대로
+curl ".../products?sort=price&order=desc"
 
-# 페이지네이션
-curl -v "http://localhost:3001/m/{mockId}/products?page=1&limit=2"
-# → 2건 반환 + 응답 헤더에 X-Total-Count: 3
+# 페이지네이션 (offset)
+curl ".../products?page=2&limit=5"
+# → X-Total-Count: 10, Link: <...?page=3>; rel="next"
+
+# 페이지네이션 (cursor — Stripe 스타일)
+curl ".../products?limit=5"
+# → { "data": [...], "has_more": true, "next_cursor": "eyJpZCI6NX0=" }
+curl ".../products?cursor=eyJpZCI6NX0=&limit=5"
 
 # 검색
-curl "http://localhost:3001/m/{mockId}/products?q=에어"
-# → "에어"가 포함된 상품만
-```
+curl ".../products?q=맥북"
 
-### 관계 데이터 쿼리
+# 필드 선택
+curl ".../products?fields=id,name,price"
 
-```bash
-# 중첩 리소스: 상품 1번의 주문 목록
-curl "http://localhost:3001/m/{mockId}/products/1/orders"
+# 관계: 유저 1의 주문 목록
+curl ".../users/1/orders"
 
 # 관계 확장: 주문에 상품 정보 포함
-curl "http://localhost:3001/m/{mockId}/orders?_expand=product"
-# → { "id": 1, "status": "shipped", "product": { "name": "맥북 프로 16인치", ... } }
+curl ".../orders?_expand=product"
+# → { "id": 1, "status": "shipped", "product": { "name": "맥북 프로", ... } }
 
-# 관계 임베드: 상품에 주문 목록 포함
-curl "http://localhost:3001/m/{mockId}/products/1?_embed=orders"
-# → { "name": "맥북 프로 16인치", ..., "orders": [{ "id": 1, ... }] }
+# 관계 임베드: 유저에 주문 목록 포함
+curl ".../users/1?_embed=orders"
 ```
 
-> "json-server 수준의 쿼리가 설정 없이 동작합니다."
+> Envelope 모드 켜면 `{ data, meta, links }` 래핑 + RFC 7807 에러 포맷
 
 ---
 
-## Demo 3: 자연어로 API 생성 (30초)
+## Demo 4: 프로덕션 시나리오 테스트 (30초)
 
-**시나리오:** API 구조도 모르겠고, 그냥 말로 설명하고 싶다.
+### 인증 시뮬레이션
 
-### 1. "Natural Language" 탭 클릭
+대시보드 Settings에서 Auth 설정:
+```bash
+# Bearer Token 설정
+curl -X PATCH ".../config" -d '{"auth":{"type":"bearer","key":"my-secret"}}'
 
-### 2. 프롬프트 입력
+# 토큰 없이 → 401
+curl http://localhost:3001/m/{mockId}/products
+# → {"type":"https://httpstatuses.com/401","title":"Unauthorized",...}
 
+# 토큰 있으면 → 200
+curl -H "Authorization: Bearer my-secret" http://localhost:3001/m/{mockId}/products
 ```
-블로그 API 만들어줘. 작성자, 글, 댓글, 태그. 한국어 데이터로 10건씩.
-```
 
-### 3. "Generate API" 클릭 → AI가 스키마 + 리얼 데이터 자동 생성
-
-결과: authors, posts, comments, tags 4개 리소스 × 10건 데이터 생성
-
-### 4. 바로 사용 가능
+### 에러 & 지연 시뮬레이션
 
 ```bash
-curl http://localhost:3001/m/{mockId}/posts
-# → 한국어 제목, 본문, 현실적인 날짜가 담긴 10개 게시글
+# 50% 확률로 503 에러 + 1~3초 랜덤 지연
+curl -X PATCH ".../config" -d '{
+  "errorRate": 0.5,
+  "errorStatus": 503,
+  "delay": {"type":"uniform","min":1000,"max":3000}
+}'
 ```
 
-> Anthropic API Key 필요 — 페이지 상단 "Anthropic API Key" 펼쳐서 입력
+### 중복 방지 (Idempotency Key)
+
+```bash
+# 같은 키로 2번 POST → 1건만 생성
+curl -H "Idempotency-Key: order-123" -X POST ".../orders" -d '{"item":"맥북"}'
+curl -H "Idempotency-Key: order-123" -X POST ".../orders" -d '{"item":"맥북"}'
+# → 두 번째는 캐시된 응답 반환, 중복 생성 안 됨
+```
+
+### 캐시 테스트 (ETag)
+
+```bash
+# 첫 요청 → ETag 헤더 반환
+curl -v http://localhost:3001/m/{mockId}/products
+# → ETag: "a1b2c3..."
+
+# 같은 ETag로 재요청 → 304 Not Modified (빈 바디)
+curl -H 'If-None-Match: "a1b2c3..."' http://localhost:3001/m/{mockId}/products
+# → 304
+```
 
 ---
 
-## Demo 4: GraphQL도 동시에 (15초)
+## Demo 5: GraphQL도 동시에 (15초)
 
-**시나리오:** 같은 데이터를 GraphQL로도 쓰고 싶다.
-
-### Demo 1에서 만든 Mock의 GraphQL 엔드포인트 사용
+별도 설정 없이 같은 Mock에서 REST + GraphQL 동시 사용.
 
 ```bash
 curl -X POST http://localhost:3001/m/{mockId}/graphql \
@@ -141,69 +183,51 @@ curl -X POST http://localhost:3001/m/{mockId}/graphql \
   -d '{"query": "{ products { id name price } orders { id status } }"}'
 ```
 
-응답:
-```json
-{
-  "data": {
-    "products": [
-      { "id": "1", "name": "맥북 프로 16인치", "price": 3490000 },
-      { "id": "2", "name": "아이패드 에어", "price": 929000 }
-    ],
-    "orders": [
-      { "id": "1", "status": "shipped" }
-    ]
-  }
-}
+```bash
+# Mutation도 가능
+curl -X POST http://localhost:3001/m/{mockId}/graphql \
+  -H "Content-Type: application/json" \
+  -d '{"query": "mutation { createProduct(input: {name: \"아이폰\", price: 1500000}) { id name } }"}'
 ```
 
-> "REST와 GraphQL이 같은 스키마에서 동시에 생성됩니다. 별도 설정 없이."
+---
+
+## Demo 6: E2E 테스트 지원 (15초)
+
+```bash
+# 테스트 중 데이터가 오염됐을 때 → 원래 상태로 리셋
+curl -X POST http://localhost:3001/api/mocks/{mockId}/reset
+# → 시드 데이터로 복원, 추가/수정/삭제 모두 되돌림
+```
 
 ---
 
-## Demo 5: 에러 시뮬레이션 (15초)
+## Demo 7: Claude Code에서 바로 생성 (15초)
 
-**시나리오:** 프론트엔드에서 에러 핸들링을 테스트하고 싶다.
-
-### 1. 대시보드에서 /products의 "Settings" 클릭
-
-### 2. 설정 변경
-
-- Delay: 2000ms (2초 지연)
-- Error rate: 50%
-- Error status: 503 Service Unavailable
-
-### 3. "Save Config" 클릭
-
-### 4. Playground에서 GET 여러 번 → 절반은 2초 뒤 정상, 절반은 503 에러
-
-> "불안정한 외부 API를 시뮬레이션할 수 있습니다."
-
----
-
-## Demo 6: Claude Code에서 바로 생성 (15초)
-
-**시나리오:** IDE에서 코딩하다가 Mock이 필요하다.
+IDE에서 나가지 않고 Mock 생성.
 
 ```
 # Claude Code에서 한마디:
 "유저 CRUD Mock API 만들어줘"
 
-# → MCP create_mock 도구가 자동 호출
-# → Mock ID + 엔드포인트 목록 반환
-# → 바로 코드에서 fetch() 사용
+# → MCP create_mock 도구 자동 호출
+# → Mock ID + 엔드포인트 반환
+# → 바로 fetch()에 URL 넣어서 개발 시작
 ```
 
 ---
 
-## 핵심 메시지
+## 핵심: 왜 MockSnap인가?
 
 | 기존 방식 | MockSnap |
 |-----------|----------|
 | JSON 파일 하드코딩 | 살아있는 API (POST→GET 반영) |
 | json-server 세팅 | 붙여넣기 한 번이면 끝 |
-| MSW 코드 작성 | 코드 한 줄 없이 API 생성 |
-| Postman Mock 설정 | 자연어로 "유저 API 만들어줘" |
+| MSW 코드 작성 | 코드 한 줄 없이 생성 |
+| Postman Mock 설정 | 자연어 "쇼핑몰 API 만들어줘" |
 | REST만 또는 GraphQL만 | REST + GraphQL 동시 생성 |
-| 쿼리 안 되는 단순 Mock | 필터/정렬/페이지네이션/관계 쿼리 지원 |
+| 쿼리 안 되는 Mock | 필터/정렬/페이지네이션/관계/커서 |
+| 에러 테스트 불가 | 지연, 에러율, 인증, ETag, Idempotency |
+| 테스트 후 데이터 오염 | `POST /reset` 한 줄로 복원 |
 
 **백엔드 완성 후:** base URL만 `mocksnap.dev/m/abc123` → `api.myapp.com`으로 바꾸면 끝.

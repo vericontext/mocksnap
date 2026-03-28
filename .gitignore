@@ -7,3 +7,6 @@ apps/api/data/*.db
 .env
 .env.local
 .playwright-mcp/
+.mcp.json
+*.db-wal
+*.db-shm

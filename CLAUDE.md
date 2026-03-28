@@ -49,14 +49,14 @@ pnpm --filter @mocksnap/api mcp   # MCP 서버 (STDIO)
 ### 핵심 서비스 (apps/api/src/services/)
 
 - `mock-service.ts` — Mock CRUD 오케스트레이션 (createMock, getMock, listMocks, deleteMock)
-- `schema-inferrer.ts` — JSON → 리소스/필드 추론
+- `schema-inferrer.ts` — JSON → 리소스/필드 추론 + Faker.js 스마트 데이터 생성 (`generateFakerData`)
 - `ai-service.ts` — Claude API 연동 (generateFromPrompt, amplifyData). ANTHROPIC_API_KEY 환경변수 필요
 - `openapi-parser.ts` — OpenAPI 3.x JSON/YAML → 리소스 파싱
-- `graphql-schema.ts` — 동적 SDL + resolver 빌드
+- `graphql-schema.ts` — 동적 SDL + resolver 빌드, FK 자동 감지하여 관계 필드 생성 (belongsTo/hasMany)
 
 ### 라우트 (apps/api/src/routes/)
 
-- `mocks.ts` — `POST/GET/DELETE /api/mocks`, `GET /api/mocks/:id/logs`
+- `mocks.ts` — `POST/GET/DELETE /api/mocks`, `GET /api/mocks/:id/logs`, `POST /api/mocks/:id/reset`
 - `dynamic.ts` — `ALL /m/:mockId/:resource/:id?` (REST CRUD + 쿼리 + 관계 + 로깅 + webhook)
 - `graphql.ts` — `ALL /m/:mockId/graphql` (graphql-yoga)
 - `config.ts` — `GET/PATCH /api/mocks/:id/resources/:name/config`
@@ -90,7 +90,14 @@ curl -X POST http://localhost:3001/m/{mockId}/graphql \
 - `better-sqlite3`는 네이티브 빌드 필요 — `pnpm install` 시 빌드 승인됨 (`pnpm.onlyBuiltDependencies`)
 - Bun 미설치 환경: `@hono/node-server` + `tsx watch`로 Node.js fallback 사용 중
 - AI 기능은 BYOK(사용자 키) 또는 서버 `ANTHROPIC_API_KEY` 필요. 둘 다 없으면 AI 비활성화, JSON 입력은 정상 동작
-- 동적 라우트 쿼리: `?field_gte=`, `?sort=&order=`, `?page=&limit=`, `?q=`, `?_expand=`, `?_embed=`
-- 중첩 리소스: `/resource/:id/subResource` — FK 필드(`{singular}Id`)를 자동 감지
+- 동적 라우트 쿼리: `?field_gte=`, `?sort=&order=`, `?page=&limit=`, `?cursor=`, `?q=`, `?fields=`, `?_expand=`, `?_embed=`
+- 관계 dot notation: `?_expand=post,post.user` (최대 3단계). FK는 `{singular}Id` 패턴 자동 감지
+- 중첩 리소스: `/resource/:id/subResource` — FK 기반 자동 필터
+- 응답 포맷: `ResourceConfig.envelope=true` 시 `{ data, meta, links }` 래핑, 에러는 RFC 7807
+- ETag: GET 응답에 MD5 해시 ETag, `If-None-Match` → 304. POST/PUT/PATCH 시 `createdAt`/`updatedAt` 자동 주입
+- Auth: `ResourceConfig.auth` 설정 시 `X-API-Key` 또는 `Authorization: Bearer` 검증
+- Idempotency: `Idempotency-Key` 헤더로 POST 중복 방지 (24시간 인메모리 캐시)
+- Faker fallback: AI 키 없으면 `@faker-js/faker`로 필드명 기반 리얼 데이터 자동 생성
 - 동적 테이블명은 SQL 인젝션 방지를 위해 `sanitizeName()`으로 영숫자+언더스코어만 허용
 - `.env` 파일은 `apps/api/.env`에 위치, gitignore 대상
+- 배포: Dockerfile(`apps/api/Dockerfile`) + fly.toml (Fly.io), vercel.json (Vercel)

@@ -105,6 +105,32 @@ export default function ResourceConfigPanel({ mockId, resource }: Props) {
         />
       </div>
 
+      <div className="flex items-center gap-3">
+        <label className="text-gray-400 w-24">Envelope</label>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={config.envelope || false}
+            onChange={(e) => setConfig({ ...config, envelope: e.target.checked })}
+            className="cursor-pointer"
+          />
+          <span className="text-gray-300">Wrap responses in {"{ data, meta, links }"}</span>
+        </label>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <label className="text-gray-400 w-24">Rate limit</label>
+        <input
+          type="number"
+          min={0}
+          max={100000}
+          value={config.rateLimit || 1000}
+          onChange={(e) => setConfig({ ...config, rateLimit: Number(e.target.value) || undefined })}
+          className="w-24 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+        />
+        <span className="text-xs text-gray-500">requests/hour (X-RateLimit headers)</span>
+      </div>
+
       <button
         onClick={() => save(config)}
         disabled={saving}

@@ -203,6 +203,15 @@ mocksnap/
 
 ## Changelog
 
+### v0.5.0 (2026-03-28) — Production-grade 응답
+
+- 응답 Envelope: `{ data, meta, links }` 래핑 (리소스별 on/off)
+- RFC 7807 Problem Details 에러 포맷 (`type`, `title`, `status`, `detail`, `instance`)
+- 필드 선택: `?fields=id,name` — 지정 필드만 반환
+- `Location` 헤더: POST 201 응답에 생성된 리소스 URL
+- Rate Limit 헤더: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`
+- `Link` 헤더: RFC 8288 표준 페이지네이션 (`rel="next"`, `rel="last"` 등)
+
 ### v0.4.0 (2026-03-28) — 진짜 API처럼
 
 - 필터링: `?age_gte=20&age_lte=30`, `?name=Kim`, `?status_ne=deleted`, `?name_like=kim`

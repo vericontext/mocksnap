@@ -28,6 +28,8 @@ export interface ResourceConfig {
   errorStatus?: number;
   forceStatus?: number;
   webhookUrl?: string;
+  envelope?: boolean;
+  rateLimit?: number;
 }
 
 export interface RequestLog {

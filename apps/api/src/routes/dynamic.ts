@@ -1,9 +1,12 @@
 import { Hono } from 'hono';
+import type { Context } from 'hono';
 import { db } from '../db/connection.js';
 import { getAllRows, getRowById, insertRow, updateRow, deleteRow, queryRows } from '../db/mock-tables.js';
 import type { ResourceConfig } from '@mocksnap/shared';
 
 const dynamic = new Hono();
+
+// --- Helpers ---
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -20,7 +23,7 @@ function fireWebhook(webhookUrl: string, event: string, resource: string, data: 
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ event, resource, data, timestamp: new Date().toISOString() }),
-  }).catch(() => {/* ignore webhook failures */});
+  }).catch(() => {});
 }
 
 function getResourceConfig(mockId: string, resource: string): ResourceConfig | null {
@@ -30,6 +33,80 @@ function getResourceConfig(mockId: string, resource: string): ResourceConfig | n
   return res ? JSON.parse(res.config_json || '{}') : null;
 }
 
+// --- RFC 7807 Problem Details ---
+
+const STATUS_TITLES: Record<number, string> = {
+  400: 'Bad Request', 401: 'Unauthorized', 403: 'Forbidden',
+  404: 'Not Found', 429: 'Too Many Requests',
+  500: 'Internal Server Error', 502: 'Bad Gateway', 503: 'Service Unavailable',
+};
+
+function problemJson(c: Context, status: number, detail: string) {
+  return c.json({
+    type: `https://httpstatuses.com/${status}`,
+    title: STATUS_TITLES[status] || 'Error',
+    status,
+    detail,
+    instance: c.req.path,
+  }, status as 400);
+}
+
+// --- Field Selection ---
+
+function selectFields(rows: unknown[], fields?: string[]): unknown[] {
+  if (!fields || fields.length === 0) return rows;
+  return rows.map((row) => {
+    const obj = row as Record<string, unknown>;
+    const selected: Record<string, unknown> = {};
+    for (const f of fields) {
+      if (f in obj) selected[f] = obj[f];
+    }
+    return selected;
+  });
+}
+
+// --- Rate Limit Headers ---
+
+const rateLimitCounters = new Map<string, { remaining: number; resetAt: number }>();
+
+function applyRateLimitHeaders(c: Context, mockId: string, resource: string, limit: number) {
+  const key = `${mockId}:${resource}`;
+  const now = Math.floor(Date.now() / 1000);
+  let entry = rateLimitCounters.get(key);
+
+  if (!entry || now >= entry.resetAt) {
+    entry = { remaining: limit - 1, resetAt: now + 3600 };
+    rateLimitCounters.set(key, entry);
+  } else {
+    entry.remaining = Math.max(0, entry.remaining - 1);
+  }
+
+  c.header('X-RateLimit-Limit', String(limit));
+  c.header('X-RateLimit-Remaining', String(entry.remaining));
+  c.header('X-RateLimit-Reset', String(entry.resetAt));
+}
+
+// --- Link Header (Pagination) ---
+
+function buildLinkHeader(basePath: string, query: Record<string, string>, page: number, limit: number, total: number): string {
+  const totalPages = Math.ceil(total / limit);
+  const links: string[] = [];
+
+  const buildUrl = (p: number) => {
+    const params = new URLSearchParams({ ...query, page: String(p), limit: String(limit) });
+    return `<${basePath}?${params}>`;
+  };
+
+  if (page < totalPages) links.push(`${buildUrl(page + 1)}; rel="next"`);
+  if (page > 1) links.push(`${buildUrl(page - 1)}; rel="prev"`);
+  links.push(`${buildUrl(1)}; rel="first"`);
+  links.push(`${buildUrl(totalPages)}; rel="last"`);
+
+  return links.join(', ');
+}
+
+// --- Relation Helpers ---
+
 function singularize(s: string): string {
   if (s.endsWith('ies')) return s.slice(0, -3) + 'y';
   if (s.endsWith('ses') || s.endsWith('xes') || s.endsWith('zes')) return s.slice(0, -2);
@@ -38,18 +115,14 @@ function singularize(s: string): string {
 }
 
 function getResourceNames(mockId: string): string[] {
-  const rows = db.prepare('SELECT name FROM mock_resources WHERE mock_id = ?').all(mockId) as { name: string }[];
-  return rows.map((r) => r.name);
+  return (db.prepare('SELECT name FROM mock_resources WHERE mock_id = ?').all(mockId) as { name: string }[]).map((r) => r.name);
 }
 
 function findForeignKeyField(mockId: string, childResource: string, parentResource: string): string | null {
   const singular = singularize(parentResource);
   const candidates = [`${singular}Id`, `${singular}_id`, `${singular}id`];
-
-  // Get a sample row to check which field exists
   const rows = getAllRows(mockId, childResource);
-  if (rows.length === 0) return candidates[0]; // Default guess
-
+  if (rows.length === 0) return candidates[0];
   const sampleKeys = Object.keys(rows[0] as Record<string, unknown>);
   for (const candidate of candidates) {
     if (sampleKeys.includes(candidate)) return candidate;
@@ -59,16 +132,11 @@ function findForeignKeyField(mockId: string, childResource: string, parentResour
 
 function expandRelations(mockId: string, rows: unknown[], expandFields: string[]): unknown[] {
   const resources = getResourceNames(mockId);
-
   return rows.map((row) => {
     const obj = { ...(row as Record<string, unknown>) };
     for (const field of expandFields) {
-      // field = "user" → look for "userId" in data, fetch from "users" resource
-      const fkField = `${field}Id`;
-      const fkFieldSnake = `${field}_id`;
-      const fkValue = obj[fkField] ?? obj[fkFieldSnake];
+      const fkValue = obj[`${field}Id`] ?? obj[`${field}_id`];
       const targetResource = field.endsWith('s') ? field : field + 's';
-
       if (fkValue !== undefined && resources.includes(targetResource)) {
         const related = getRowById(mockId, targetResource, String(fkValue));
         if (related) obj[field] = related;
@@ -80,36 +148,31 @@ function expandRelations(mockId: string, rows: unknown[], expandFields: string[]
 
 function embedRelations(mockId: string, rows: unknown[], resourceName: string, embedFields: string[]): unknown[] {
   const resources = getResourceNames(mockId);
-
   return rows.map((row) => {
     const obj = { ...(row as Record<string, unknown>) };
     const id = obj.id;
-
     for (const embedResource of embedFields) {
       if (!resources.includes(embedResource)) continue;
       const fkField = findForeignKeyField(mockId, embedResource, resourceName);
       if (!fkField || id === undefined) continue;
-
       const allChildren = getAllRows(mockId, embedResource);
-      obj[embedResource] = allChildren.filter((child) => {
-        const childObj = child as Record<string, unknown>;
-        return String(childObj[fkField]) === String(id);
-      });
+      obj[embedResource] = allChildren.filter((child) =>
+        String((child as Record<string, unknown>)[fkField]) === String(id)
+      );
     }
     return obj;
   });
 }
 
-const RESERVED_PARAMS = new Set(['sort', 'order', 'page', 'limit', 'q', '_expand', '_embed']);
+// --- Query Parsing ---
+
+const RESERVED_PARAMS = new Set(['sort', 'order', 'page', 'limit', 'q', '_expand', '_embed', 'fields']);
 
 function parseQueryOptions(query: Record<string, string>) {
   const filters: Record<string, string> = {};
   for (const [key, value] of Object.entries(query)) {
-    if (!RESERVED_PARAMS.has(key)) {
-      filters[key] = value;
-    }
+    if (!RESERVED_PARAMS.has(key)) filters[key] = value;
   }
-
   return {
     filters: Object.keys(filters).length > 0 ? filters : undefined,
     sort: query.sort,
@@ -119,43 +182,45 @@ function parseQueryOptions(query: Record<string, string>) {
     q: query.q,
     _expand: query._expand ? query._expand.split(',') : undefined,
     _embed: query._embed ? query._embed.split(',') : undefined,
+    fields: query.fields ? query.fields.split(',') : undefined,
   };
 }
 
-// Middleware: validate mock/resource + apply response config (delay, errors)
-async function validateAndApplyConfig(c: Parameters<Parameters<typeof dynamic.use>[1]>[0], next: () => Promise<void>) {
+// --- Common Response Helpers ---
+
+function applyCommonHeaders(c: Context, mockId: string, resource: string) {
+  const config = getResourceConfig(mockId, resource);
+  const rateLimit = config?.rateLimit ?? 1000;
+  applyRateLimitHeaders(c, mockId, resource, rateLimit);
+  c.header('Access-Control-Expose-Headers', 'X-Total-Count, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, Link, Location');
+}
+
+// --- Middleware ---
+
+async function validateAndApplyConfig(c: Context, next: () => Promise<void>) {
   const mockId = c.req.param('mockId');
   const resource = c.req.param('resource');
 
   const mock = db.prepare('SELECT id FROM mocks WHERE id = ?').get(mockId);
-  if (!mock) {
-    return c.json({ error: 'Not Found', message: 'Mock not found' }, 404);
-  }
+  if (!mock) return problemJson(c, 404, 'Mock not found');
 
   const res = db.prepare('SELECT name, config_json FROM mock_resources WHERE mock_id = ? AND name = ?').get(mockId, resource) as
-    | { name: string; config_json: string }
-    | undefined;
-  if (!res) {
-    return c.json({ error: 'Not Found', message: `Resource "${resource}" not found in this mock` }, 404);
-  }
+    | { name: string; config_json: string } | undefined;
+  if (!res) return problemJson(c, 404, `Resource "${resource}" not found in this mock`);
 
   const config: ResourceConfig = JSON.parse(res.config_json || '{}');
 
-  if (config.delay && config.delay > 0) {
-    await sleep(config.delay);
-  }
+  if (config.delay && config.delay > 0) await sleep(config.delay);
 
   if (config.forceStatus) {
-    const body = { error: 'Simulated Error', message: `Forced status ${config.forceStatus}` };
     logRequest(mockId, c.req.method, c.req.path, config.forceStatus);
-    return c.json(body, config.forceStatus as 400);
+    return problemJson(c, config.forceStatus, `Forced status ${config.forceStatus}`);
   }
 
   if (config.errorRate && config.errorRate > 0 && Math.random() < config.errorRate) {
     const status = config.errorStatus || 500;
-    const body = { error: 'Simulated Error', message: `Random error (${Math.round(config.errorRate * 100)}% rate)` };
     logRequest(mockId, c.req.method, c.req.path, status);
-    return c.json(body, status as 500);
+    return problemJson(c, status, `Random error (${Math.round(config.errorRate * 100)}% rate)`);
   }
 
   await next();
@@ -164,109 +229,139 @@ async function validateAndApplyConfig(c: Parameters<Parameters<typeof dynamic.us
 dynamic.use('/:mockId/:resource/*', validateAndApplyConfig);
 dynamic.use('/:mockId/:resource', validateAndApplyConfig);
 
-// GET /m/:mockId/:resource — list with filtering, sorting, pagination, search
+// --- GET List ---
+
 dynamic.get('/:mockId/:resource', (c) => {
   const mockId = c.req.param('mockId');
   const resource = c.req.param('resource');
   const opts = parseQueryOptions(c.req.query());
+  const config = getResourceConfig(mockId, resource);
 
   const { data, total } = queryRows(mockId, resource, opts);
 
   let result = data;
   if (opts._expand) result = expandRelations(mockId, result, opts._expand);
   if (opts._embed) result = embedRelations(mockId, result, resource, opts._embed);
+  result = selectFields(result, opts.fields);
 
-  const body = JSON.stringify(result);
-  logRequest(mockId, 'GET', c.req.path, 200, undefined, body);
-
+  applyCommonHeaders(c, mockId, resource);
   c.header('X-Total-Count', String(total));
-  c.header('Access-Control-Expose-Headers', 'X-Total-Count');
+
+  // Link header for pagination
+  if (opts.page && opts.limit) {
+    const linkHeader = buildLinkHeader(c.req.path, c.req.query(), opts.page, opts.limit, total);
+    if (linkHeader) c.header('Link', linkHeader);
+  }
+
+  logRequest(mockId, 'GET', c.req.path, 200);
+
+  // Envelope
+  if (config?.envelope) {
+    const page = opts.page ?? 1;
+    const limit = opts.limit ?? total;
+    const totalPages = limit > 0 ? Math.ceil(total / limit) : 1;
+    const basePath = c.req.path;
+    const buildUrl = (p: number) => `${basePath}?page=${p}&limit=${limit}`;
+
+    return c.json({
+      data: result,
+      meta: { total, page, limit, totalPages },
+      links: {
+        self: buildUrl(page),
+        first: buildUrl(1),
+        last: buildUrl(totalPages),
+        next: page < totalPages ? buildUrl(page + 1) : null,
+        prev: page > 1 ? buildUrl(page - 1) : null,
+      },
+    });
+  }
+
   return c.json(result);
 });
 
-// GET /m/:mockId/:resource/:id — get one with _expand/_embed
+// --- GET Single ---
+
 dynamic.get('/:mockId/:resource/:id', (c) => {
   const mockId = c.req.param('mockId');
   const resource = c.req.param('resource');
   const id = c.req.param('id');
 
-  // Check if :id is actually a sub-resource (nested route: /users/1/posts)
-  // This is handled by the next route below
-
   const row = getRowById(mockId, resource, id);
   if (!row) {
     logRequest(mockId, 'GET', c.req.path, 404);
-    return c.json({ error: 'Not Found', message: 'Item not found' }, 404);
+    return problemJson(c, 404, `Item with id '${id}' not found in '${resource}'`);
   }
 
   const query = c.req.query();
   let result = [row];
   if (query._expand) result = expandRelations(mockId, result, query._expand.split(','));
   if (query._embed) result = embedRelations(mockId, result, resource, query._embed.split(','));
+  if (query.fields) result = selectFields(result, query.fields.split(','));
 
-  const body = JSON.stringify(result[0]);
-  logRequest(mockId, 'GET', c.req.path, 200, undefined, body);
-  return c.json(result[0]);
+  applyCommonHeaders(c, mockId, resource);
+  logRequest(mockId, 'GET', c.req.path, 200);
+
+  const config = getResourceConfig(mockId, resource);
+  const item = result[0];
+  return c.json(config?.envelope ? { data: item } : item);
 });
 
-// GET /m/:mockId/:resource/:id/:subResource — nested resources
+// --- GET Nested ---
+
 dynamic.get('/:mockId/:resource/:id/:subResource', (c) => {
   const mockId = c.req.param('mockId');
   const parentResource = c.req.param('resource');
   const parentId = c.req.param('id');
   const subResource = c.req.param('subResource');
 
-  // Verify parent exists
   const parent = getRowById(mockId, parentResource, parentId);
-  if (!parent) {
-    return c.json({ error: 'Not Found', message: `${singularize(parentResource)} not found` }, 404);
-  }
+  if (!parent) return problemJson(c, 404, `${singularize(parentResource)} with id '${parentId}' not found`);
 
-  // Verify sub-resource exists
   const resources = getResourceNames(mockId);
-  if (!resources.includes(subResource)) {
-    return c.json({ error: 'Not Found', message: `Resource "${subResource}" not found` }, 404);
-  }
+  if (!resources.includes(subResource)) return problemJson(c, 404, `Resource "${subResource}" not found`);
 
-  // Find FK field in sub-resource
   const fkField = findForeignKeyField(mockId, subResource, parentResource);
-  if (!fkField) {
-    return c.json({ error: 'Bad Request', message: `No foreign key found linking ${subResource} to ${parentResource}` }, 400);
-  }
+  if (!fkField) return problemJson(c, 400, `No foreign key found linking ${subResource} to ${parentResource}`);
 
-  // Query sub-resource with FK filter + any additional query params
   const opts = parseQueryOptions(c.req.query());
   opts.filters = { ...opts.filters, [fkField]: parentId };
-
   const { data, total } = queryRows(mockId, subResource, opts);
 
   let result = data;
   if (opts._expand) result = expandRelations(mockId, result, opts._expand);
+  result = selectFields(result, opts.fields);
 
-  logRequest(mockId, 'GET', c.req.path, 200, undefined, JSON.stringify(result));
-
+  applyCommonHeaders(c, mockId, subResource);
   c.header('X-Total-Count', String(total));
-  c.header('Access-Control-Expose-Headers', 'X-Total-Count');
+  logRequest(mockId, 'GET', c.req.path, 200);
+
   return c.json(result);
 });
 
-// POST /m/:mockId/:resource — create
+// --- POST ---
+
 dynamic.post('/:mockId/:resource', async (c) => {
   const mockId = c.req.param('mockId');
   const resource = c.req.param('resource');
   const body = await c.req.json();
   const result = insertRow(mockId, resource, body);
+
+  applyCommonHeaders(c, mockId, resource);
+
+  // Location header
+  const itemId = (result.data as Record<string, unknown>)?.id ?? result._row_id;
+  c.header('Location', `/m/${mockId}/${resource}/${itemId}`);
+
   logRequest(mockId, 'POST', c.req.path, 201, JSON.stringify(body), JSON.stringify(result.data));
 
   const config = getResourceConfig(mockId, resource);
-  if (config?.webhookUrl) {
-    fireWebhook(config.webhookUrl, 'created', resource, result.data);
-  }
+  if (config?.webhookUrl) fireWebhook(config.webhookUrl, 'created', resource, result.data);
 
-  return c.json(result.data, 201);
+  return c.json(config?.envelope ? { data: result.data } : result.data, 201);
 });
 
-// PUT /m/:mockId/:resource/:id — full replace
+// --- PUT ---
+
 dynamic.put('/:mockId/:resource/:id', async (c) => {
   const mockId = c.req.param('mockId');
   const resource = c.req.param('resource');
@@ -274,19 +369,20 @@ dynamic.put('/:mockId/:resource/:id', async (c) => {
   const updated = updateRow(mockId, resource, c.req.param('id'), body, false);
   if (!updated) {
     logRequest(mockId, 'PUT', c.req.path, 404, JSON.stringify(body));
-    return c.json({ error: 'Not Found', message: 'Item not found' }, 404);
+    return problemJson(c, 404, `Item with id '${c.req.param('id')}' not found in '${resource}'`);
   }
+
+  applyCommonHeaders(c, mockId, resource);
   logRequest(mockId, 'PUT', c.req.path, 200, JSON.stringify(body), JSON.stringify(updated));
 
   const config = getResourceConfig(mockId, resource);
-  if (config?.webhookUrl) {
-    fireWebhook(config.webhookUrl, 'updated', resource, updated);
-  }
+  if (config?.webhookUrl) fireWebhook(config.webhookUrl, 'updated', resource, updated);
 
-  return c.json(updated);
+  return c.json(config?.envelope ? { data: updated } : updated);
 });
 
-// PATCH /m/:mockId/:resource/:id — partial update
+// --- PATCH ---
+
 dynamic.patch('/:mockId/:resource/:id', async (c) => {
   const mockId = c.req.param('mockId');
   const resource = c.req.param('resource');
@@ -294,19 +390,20 @@ dynamic.patch('/:mockId/:resource/:id', async (c) => {
   const updated = updateRow(mockId, resource, c.req.param('id'), body, true);
   if (!updated) {
     logRequest(mockId, 'PATCH', c.req.path, 404, JSON.stringify(body));
-    return c.json({ error: 'Not Found', message: 'Item not found' }, 404);
+    return problemJson(c, 404, `Item with id '${c.req.param('id')}' not found in '${resource}'`);
   }
+
+  applyCommonHeaders(c, mockId, resource);
   logRequest(mockId, 'PATCH', c.req.path, 200, JSON.stringify(body), JSON.stringify(updated));
 
   const config = getResourceConfig(mockId, resource);
-  if (config?.webhookUrl) {
-    fireWebhook(config.webhookUrl, 'updated', resource, updated);
-  }
+  if (config?.webhookUrl) fireWebhook(config.webhookUrl, 'updated', resource, updated);
 
-  return c.json(updated);
+  return c.json(config?.envelope ? { data: updated } : updated);
 });
 
-// DELETE /m/:mockId/:resource/:id — delete
+// --- DELETE ---
+
 dynamic.delete('/:mockId/:resource/:id', (c) => {
   const mockId = c.req.param('mockId');
   const resource = c.req.param('resource');
@@ -316,14 +413,14 @@ dynamic.delete('/:mockId/:resource/:id', (c) => {
   const deleted = deleteRow(mockId, resource, id);
   if (!deleted) {
     logRequest(mockId, 'DELETE', c.req.path, 404);
-    return c.json({ error: 'Not Found', message: 'Item not found' }, 404);
+    return problemJson(c, 404, `Item with id '${id}' not found in '${resource}'`);
   }
+
+  applyCommonHeaders(c, mockId, resource);
   logRequest(mockId, 'DELETE', c.req.path, 200);
 
   const config = getResourceConfig(mockId, resource);
-  if (config?.webhookUrl) {
-    fireWebhook(config.webhookUrl, 'deleted', resource, item);
-  }
+  if (config?.webhookUrl) fireWebhook(config.webhookUrl, 'deleted', resource, item);
 
   return c.json({ message: 'Deleted' });
 });

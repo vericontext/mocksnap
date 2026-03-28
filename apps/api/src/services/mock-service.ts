@@ -211,9 +211,11 @@ export async function modifyMockWithChat(
   const existingNames = new Set(currentResources.map((r) => r.name));
   const newNames = new Set(Object.keys(newResources));
 
-  // Remove resources that AI didn't include
+  // Only remove resources if user explicitly asked to remove them
+  // Check if the message contains removal intent
+  const removalIntent = /\b(remove|delete|drop)\b/i.test(message);
   for (const name of existingNames) {
-    if (!newNames.has(name)) {
+    if (!newNames.has(name) && removalIntent) {
       db.exec(`DROP TABLE IF EXISTS "mock_${mockId.replace(/[^a-zA-Z0-9_]/g, '')}_${name.replace(/[^a-zA-Z0-9_]/g, '')}"`);
       db.prepare('DELETE FROM mock_resources WHERE mock_id = ? AND name = ?').run(mockId, name);
     }

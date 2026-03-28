@@ -18,15 +18,20 @@ export async function generateFromPrompt(prompt: string, apiKey?: string): Promi
   const response = await client.messages.create({
     model: 'claude-sonnet-4-20250514',
     max_tokens: 4096,
-    system: `You are an API schema designer. Given a natural language description, generate a JSON object with realistic sample data.
+    system: `You are an API schema designer. Given a natural language description, generate a JSON object with realistic sample data for a REST API.
 
-Rules:
-- Top-level keys are resource names (plural, lowercase, English)
-- Each resource is an array of 10 realistic items
-- Each item must have an "id" field (auto-incrementing integer starting from 1)
-- Generate contextually realistic data (Korean names if Korean context is mentioned, valid emails, realistic ages 20-60, proper phone formats, etc.)
-- If the user mentions relationships between resources, use matching foreign key ids
-- Return ONLY valid JSON, no explanation or markdown`,
+<instructions>
+1. Return a single JSON object where each top-level key is a resource name (plural, lowercase, English).
+2. Each resource value is an array of 5-10 realistic data items.
+3. Every item must have an "id" field (auto-incrementing integer starting from 1).
+4. If the user describes relationships between resources, create matching foreign key fields (e.g. "authorId" or "author_id") with valid reference IDs.
+5. Generate contextually realistic data: real-sounding names, valid email formats, realistic ages (20-60), proper dates (ISO format), meaningful descriptions.
+6. Use English data by default unless the user specifies another language.
+</instructions>
+
+<output_format>
+Return ONLY valid JSON. No explanation, no markdown, no code blocks. The response must be parseable by JSON.parse().
+</output_format>`,
     messages: [{ role: 'user', content: prompt }],
   });
 
@@ -56,15 +61,18 @@ export async function amplifyData(
   const response = await client.messages.create({
     model: 'claude-sonnet-4-20250514',
     max_tokens: 4096,
-    system: `You are a realistic data generator. Given a schema and sample data, generate more items that match the same pattern and style.
+    system: `You are a realistic data generator. Given a schema and sample data, generate more items that match the exact same pattern, field names, and style.
 
-Rules:
-- Match the exact field names and types from the schema
-- Start id from ${maxId + 1} and auto-increment
-- Generate contextually realistic data that matches the existing data's language and style
-- If existing data uses Korean names, generate Korean names. If English, use English.
-- Emails should be valid-looking, ages realistic (20-60), dates in ISO format
-- Return ONLY a valid JSON array, no explanation or markdown`,
+<critical_rules>
+1. Match the EXACT field names from the schema. Do not rename, add, or remove any fields.
+2. Start id from ${maxId + 1} and auto-increment.
+3. Match the language and style of existing data (if English, generate English).
+4. Generate contextually realistic values: valid emails, ages 20-60, dates in ISO format, meaningful text.
+</critical_rules>
+
+<output_format>
+Return ONLY a valid JSON array. No explanation, no markdown, no code blocks.
+</output_format>`,
     messages: [{
       role: 'user',
       content: `Schema for "${resourceName}":
@@ -98,24 +106,51 @@ export async function modifyMockSchema(
     `${r.name}: ${r.fields.map((f) => `${f.name}(${f.type})`).join(', ')}`
   ).join('\n');
 
+  const resourceNames = currentResources.map((r) => r.name);
+
   const response = await client.messages.create({
     model: 'claude-sonnet-4-20250514',
-    max_tokens: 4096,
-    system: `You are an API schema modifier. You receive a current API schema and a user's modification request.
+    max_tokens: 8192,
+    system: `You are a precise API schema modifier. Your job is to apply the user's requested changes to an existing API schema and return the updated version.
 
-Current schema:
+<current_schema>
 ${schemaDescription}
+</current_schema>
 
-Rules:
-- Return a JSON object with two fields: "resources" and "changes"
-- "resources" contains the COMPLETE updated schema with sample data (5 items per resource)
-- Include ALL resources (both modified and unmodified ones)
-- Each resource is a key with an array of sample data items
-- Every item must have an "id" field (auto-incrementing integer)
-- Preserve existing field names unless the user explicitly asks to rename/remove them
-- Generate realistic sample data matching the field names
-- "changes" is an array of human-readable strings describing what was modified
-- Return ONLY valid JSON, no explanation or markdown`,
+<critical_rules>
+1. NEVER remove or omit an existing resource unless the user EXPLICITLY asks to remove it. All ${resourceNames.length} current resources (${resourceNames.join(', ')}) MUST appear in your response.
+2. NEVER rename existing fields unless the user EXPLICITLY asks to rename them. Preserve exact field names including casing (e.g. keep "author_id" as "author_id", keep "userId" as "userId").
+3. NEVER change field types unless the user EXPLICITLY asks to change them.
+4. When adding a new resource that references an existing one, use the same FK naming convention already present in the schema (e.g. if existing FKs use "author_id" style, use "book_id" not "bookId").
+</critical_rules>
+
+<output_format>
+Return a single JSON object with exactly two fields:
+- "resources": an object where each key is a resource name and each value is an array of 5 sample data items. Include ALL resources (existing + new).
+- "changes": an array of short strings describing each change made.
+
+Every data item must have an "id" field (auto-incrementing integer starting from 1). Generate realistic English sample data.
+</output_format>
+
+<examples>
+<example>
+User: "Add an email field to users"
+Current: users has fields id, name, age
+
+Correct response: resources includes "users" with id, name, age, AND email. All other resources unchanged.
+Wrong: Removing age field. Renaming name to username. Omitting other resources.
+</example>
+
+<example>
+User: "Add a categories resource"
+Current: users, posts, comments
+
+Correct response: resources includes users, posts, comments (unchanged), AND categories (new).
+Wrong: Returning only categories. Omitting users, posts, or comments.
+</example>
+</examples>
+
+Return ONLY valid JSON. No explanation, no markdown, no code blocks.`,
     messages: [{ role: 'user', content: message }],
   });
 

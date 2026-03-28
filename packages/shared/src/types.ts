@@ -61,6 +61,17 @@ export interface MockListItem {
 
 export interface CreateMockResponse extends MockDefinition {}
 
+export interface QueryOptions {
+  filters?: Record<string, string>;
+  sort?: string;
+  order?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+  q?: string;
+  _expand?: string[];
+  _embed?: string[];
+}
+
 export interface ApiError {
   error: string;
   message: string;

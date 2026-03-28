@@ -181,14 +181,14 @@ mocksnap/
 
 ## Roadmap
 
-### 진짜 API처럼 동작하게 (High Priority)
+### 진짜 API처럼 동작하게
 
-- [ ] **필터링** — `GET /users?age_gte=20&age_lte=30&category=laptop`
-- [ ] **정렬** — `GET /users?sort=name&order=asc`
-- [ ] **페이지네이션** — `GET /users?page=2&limit=10` (총 건수 헤더 포함)
-- [ ] **전체 검색** — `GET /users?q=kim`
-- [ ] **중첩 리소스** — `GET /users/1/posts` (유저 1의 게시글)
-- [ ] **관계 확장** — `GET /posts?_expand=author&_embed=comments`
+- [x] **필터링** — `GET /users?age_gte=20&age_lte=30&category=laptop`
+- [x] **정렬** — `GET /users?sort=name&order=asc`
+- [x] **페이지네이션** — `GET /users?page=2&limit=10` (총 건수 헤더 포함)
+- [x] **전체 검색** — `GET /users?q=kim`
+- [x] **중첩 리소스** — `GET /users/1/posts` (유저 1의 게시글)
+- [x] **관계 확장** — `GET /posts?_expand=author&_embed=comments`
 - [ ] **Auth 시뮬레이션** — API Key, Bearer Token 검증
 
 ### 플랫폼 확장
@@ -202,6 +202,16 @@ mocksnap/
 - [ ] SQL DDL 입력 — `CREATE TABLE` 문에서 Mock 자동 생성
 
 ## Changelog
+
+### v0.4.0 (2026-03-28) — 진짜 API처럼
+
+- 필터링: `?age_gte=20&age_lte=30`, `?name=Kim`, `?status_ne=deleted`, `?name_like=kim`
+- 정렬: `?sort=name&order=asc`
+- 페이지네이션: `?page=2&limit=10` + `X-Total-Count` 응답 헤더
+- 전체 검색: `?q=kim`
+- 중첩 리소스: `/users/1/posts` (FK 자동 감지)
+- 관계 확장: `?_expand=user` (FK → 원본 객체로 교체)
+- 관계 임베드: `?_embed=posts` (1:N 하위 리소스 배열 포함)
 
 ### v0.3.0 (2026-03-28) — 배포 준비
 

@@ -38,6 +38,93 @@ export function getAllRows(mockId: string, resourceName: string): unknown[] {
   return rows.map((r) => JSON.parse(r.data));
 }
 
+const RESERVED_PARAMS = new Set(['sort', 'order', 'page', 'limit', 'q', '_expand', '_embed']);
+
+export function queryRows(
+  mockId: string,
+  resourceName: string,
+  options: {
+    filters?: Record<string, string>;
+    sort?: string;
+    order?: 'asc' | 'desc';
+    page?: number;
+    limit?: number;
+    q?: string;
+  }
+): { data: unknown[]; total: number } {
+  const name = tableName(mockId, resourceName);
+  const conditions: string[] = [];
+  const params: unknown[] = [];
+
+  // Filtering
+  if (options.filters) {
+    for (const [key, value] of Object.entries(options.filters)) {
+      if (RESERVED_PARAMS.has(key)) continue;
+
+      let field = key;
+      let op = '=';
+
+      if (key.endsWith('_gte')) { field = key.slice(0, -4); op = '>='; }
+      else if (key.endsWith('_lte')) { field = key.slice(0, -4); op = '<='; }
+      else if (key.endsWith('_ne')) { field = key.slice(0, -3); op = '!='; }
+      else if (key.endsWith('_like')) { field = key.slice(0, -5); op = 'LIKE'; }
+
+      const safeField = field.replace(/[^a-zA-Z0-9_]/g, '');
+      if (op === 'LIKE') {
+        conditions.push(`CAST(json_extract(data, '$.${safeField}') AS TEXT) LIKE ?`);
+        params.push(`%${value}%`);
+      } else {
+        // Try numeric comparison for gte/lte, fall back to string
+        const numVal = Number(value);
+        if (!isNaN(numVal) && (op === '>=' || op === '<=' || op === '!=' || op === '=')) {
+          conditions.push(`CAST(json_extract(data, '$.${safeField}') AS REAL) ${op} ?`);
+          params.push(numVal);
+        } else {
+          conditions.push(`json_extract(data, '$.${safeField}') ${op} ?`);
+          params.push(value);
+        }
+      }
+    }
+  }
+
+  // Full-text search
+  if (options.q) {
+    conditions.push(`CAST(data AS TEXT) LIKE ?`);
+    params.push(`%${options.q}%`);
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+  // Total count
+  const countRow = db.prepare(`SELECT COUNT(*) as cnt FROM "${name}" ${whereClause}`).get(...params) as { cnt: number };
+  const total = countRow.cnt;
+
+  // Sorting
+  let orderClause = '';
+  if (options.sort) {
+    const safeSort = options.sort.replace(/[^a-zA-Z0-9_]/g, '');
+    const dir = options.order === 'desc' ? 'DESC' : 'ASC';
+    orderClause = `ORDER BY json_extract(data, '$.${safeSort}') ${dir}`;
+  }
+
+  // Pagination
+  let limitClause = '';
+  const limitParams: unknown[] = [];
+  if (options.page && options.limit) {
+    limitClause = 'LIMIT ? OFFSET ?';
+    limitParams.push(options.limit, (options.page - 1) * options.limit);
+  } else if (options.limit) {
+    limitClause = 'LIMIT ?';
+    limitParams.push(options.limit);
+  }
+
+  const rows = db.prepare(
+    `SELECT _row_id, data FROM "${name}" ${whereClause} ${orderClause} ${limitClause}`
+  ).all(...params, ...limitParams) as { _row_id: number; data: string }[];
+
+  return { data: rows.map((r) => JSON.parse(r.data)), total };
+}
+
 export function getRowById(mockId: string, resourceName: string, id: string): unknown | null {
   const name = tableName(mockId, resourceName);
   // Try matching by JSON id field first, then by _row_id

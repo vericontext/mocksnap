@@ -1,4 +1,4 @@
-import type { CreateMockRequest, CreateMockResponse, MockListItem, RequestLog, ResourceConfig } from '@mocksnap/shared';
+import type { CreateMockRequest, CreateMockResponse, MockListItem, ModifyMockResponse, RequestLog, ResourceConfig } from '@mocksnap/shared';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -19,6 +19,19 @@ export async function fetchMock(mockId: string): Promise<CreateMockResponse> {
   const res = await fetch(`${API_URL}/api/mocks/${mockId}`);
   if (!res.ok) {
     throw new Error('Mock not found');
+  }
+  return res.json();
+}
+
+export async function modifyMock(mockId: string, message: string, apiKey?: string): Promise<ModifyMockResponse> {
+  const res = await fetch(`${API_URL}/api/mocks/${mockId}/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message, anthropicApiKey: apiKey || undefined }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.message || 'Failed to modify mock');
   }
   return res.json();
 }

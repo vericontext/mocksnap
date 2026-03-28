@@ -1,8 +1,8 @@
 import { nanoid } from 'nanoid';
 import { db } from '../db/connection.js';
-import { createMockDataTable, dropMockDataTables, insertRow } from '../db/mock-tables.js';
+import { createMockDataTable, dropMockDataTables, insertRow, resetTable } from '../db/mock-tables.js';
 import { inferSchema, generateFakerData } from './schema-inferrer.js';
-import { generateFromPrompt, amplifyData } from './ai-service.js';
+import { generateFromPrompt, amplifyData, modifyMockSchema } from './ai-service.js';
 import { parseOpenAPISpec } from './openapi-parser.js';
 import type { MockDefinition, MockListItem, ResourceDefinition, CreateMockRequest } from '@mocksnap/shared';
 import { API_BASE_URL } from '@mocksnap/shared';
@@ -186,4 +186,65 @@ export function deleteMock(mockId: string): boolean {
   db.prepare('DELETE FROM mock_resources WHERE mock_id = ?').run(mockId);
   db.prepare('DELETE FROM mocks WHERE id = ?').run(mockId);
   return true;
+}
+
+export async function modifyMockWithChat(
+  mockId: string,
+  message: string,
+  apiKey?: string
+): Promise<{ changes: string[]; mock: MockDefinition }> {
+  // Load current schema
+  const currentResources = db.prepare('SELECT name, schema_json FROM mock_resources WHERE mock_id = ?').all(mockId) as {
+    name: string; schema_json: string;
+  }[];
+
+  if (currentResources.length === 0) throw new Error('Mock not found');
+
+  const currentSchema = currentResources.map((r) => ({
+    name: r.name,
+    fields: JSON.parse(r.schema_json),
+  }));
+
+  // Ask AI for modifications
+  const { resources: newResources, changes } = await modifyMockSchema(currentSchema, message, apiKey);
+
+  const existingNames = new Set(currentResources.map((r) => r.name));
+  const newNames = new Set(Object.keys(newResources));
+
+  // Remove resources that AI didn't include
+  for (const name of existingNames) {
+    if (!newNames.has(name)) {
+      db.exec(`DROP TABLE IF EXISTS "mock_${mockId.replace(/[^a-zA-Z0-9_]/g, '')}_${name.replace(/[^a-zA-Z0-9_]/g, '')}"`);
+      db.prepare('DELETE FROM mock_resources WHERE mock_id = ? AND name = ?').run(mockId, name);
+    }
+  }
+
+  // Add or update resources
+  const inferredResources = inferSchema(newResources);
+  for (const resource of inferredResources) {
+    const seedJson = JSON.stringify(resource.seedData);
+    const fieldsJson = JSON.stringify(resource.fields);
+
+    if (existingNames.has(resource.name)) {
+      // Update existing
+      db.prepare('UPDATE mock_resources SET schema_json = ?, seed_data = ? WHERE mock_id = ? AND name = ?')
+        .run(fieldsJson, seedJson, mockId, resource.name);
+      resetTable(mockId, resource.name, resource.seedData);
+    } else {
+      // Create new
+      db.prepare('INSERT INTO mock_resources (mock_id, name, schema_json, seed_data) VALUES (?, ?, ?, ?)')
+        .run(mockId, resource.name, fieldsJson, seedJson);
+      createMockDataTable(mockId, resource.name);
+      for (const item of resource.seedData) {
+        insertRow(mockId, resource.name, item);
+      }
+    }
+  }
+
+  // Update timestamp
+  db.prepare("UPDATE mocks SET updated_at = datetime('now') WHERE id = ?").run(mockId);
+
+  // Return updated mock
+  const mock = getMock(mockId)!;
+  return { changes, mock };
 }

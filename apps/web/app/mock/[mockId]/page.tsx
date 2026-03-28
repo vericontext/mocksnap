@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { fetchMock } from '@/lib/api-client';
 import EndpointList from '@/components/endpoint-list';
 import ApiPlayground from '@/components/api-playground';
 import RequestLogs from '@/components/request-logs';
 import ERDiagram from '@/components/er-diagram';
+import ChatPanel from '@/components/chat-panel';
 import type { CreateMockResponse } from '@mocksnap/shared';
 
 export default function MockDashboard() {
@@ -14,12 +15,20 @@ export default function MockDashboard() {
   const mockId = params.mockId as string;
   const [mock, setMock] = useState<CreateMockResponse | null>(null);
   const [error, setError] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  useEffect(() => {
+  const loadMock = useCallback(() => {
     fetchMock(mockId)
       .then(setMock)
       .catch(() => setError('Mock not found'));
   }, [mockId]);
+
+  useEffect(() => { loadMock(); }, [loadMock]);
+
+  const handleMockUpdated = () => {
+    loadMock();
+    setRefreshKey((k) => k + 1);
+  };
 
   if (error) {
     return (
@@ -50,7 +59,8 @@ export default function MockDashboard() {
       </div>
 
       <div className="space-y-8">
-        <ERDiagram mockId={mock.id} />
+        <ERDiagram key={`er-${refreshKey}`} mockId={mock.id} />
+        <ChatPanel mockId={mock.id} onMockUpdated={handleMockUpdated} />
         <EndpointList mockId={mock.id} resources={mock.resources} baseUrl={mock.baseUrl} graphqlUrl={mock.graphqlUrl} />
         <ApiPlayground baseUrl={mock.baseUrl} />
         <RequestLogs mockId={mock.id} />

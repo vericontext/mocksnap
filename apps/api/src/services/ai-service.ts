@@ -86,3 +86,45 @@ Generate ${count} more items matching this exact pattern.`,
 
   return parsed;
 }
+
+export async function modifyMockSchema(
+  currentResources: { name: string; fields: { name: string; type: string }[] }[],
+  message: string,
+  apiKey?: string
+): Promise<{ resources: Record<string, unknown[]>; changes: string[] }> {
+  const client = getClient(apiKey);
+
+  const schemaDescription = currentResources.map((r) =>
+    `${r.name}: ${r.fields.map((f) => `${f.name}(${f.type})`).join(', ')}`
+  ).join('\n');
+
+  const response = await client.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 4096,
+    system: `You are an API schema modifier. You receive a current API schema and a user's modification request.
+
+Current schema:
+${schemaDescription}
+
+Rules:
+- Return a JSON object with two fields: "resources" and "changes"
+- "resources" contains the COMPLETE updated schema with sample data (5 items per resource)
+- Include ALL resources (both modified and unmodified ones)
+- Each resource is a key with an array of sample data items
+- Every item must have an "id" field (auto-incrementing integer)
+- Preserve existing field names unless the user explicitly asks to rename/remove them
+- Generate realistic sample data matching the field names
+- "changes" is an array of human-readable strings describing what was modified
+- Return ONLY valid JSON, no explanation or markdown`,
+    messages: [{ role: 'user', content: message }],
+  });
+
+  const text = response.content[0].type === 'text' ? response.content[0].text : '';
+  const parsed = JSON.parse(extractJson(text));
+
+  if (!parsed.resources || !parsed.changes) {
+    throw new Error('AI returned invalid format: expected { resources, changes }');
+  }
+
+  return parsed as { resources: Record<string, unknown[]>; changes: string[] };
+}

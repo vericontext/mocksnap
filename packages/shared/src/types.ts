@@ -78,6 +78,22 @@ export interface MockListItem {
 
 export interface CreateMockResponse extends MockDefinition {}
 
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface ModifyMockRequest {
+  message: string;
+  anthropicApiKey?: string;
+}
+
+export interface ModifyMockResponse {
+  message: string;
+  changes: string[];
+  mock: MockDefinition;
+}
+
 export interface QueryOptions {
   filters?: Record<string, string>;
   sort?: string;

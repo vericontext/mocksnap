@@ -107,18 +107,30 @@ curl ".../products?q=맥북"
 # 필드 선택
 curl ".../products?fields=id,name,price"
 
-# 관계: 유저 1의 주문 목록
+# 중첩 리소스: 유저 1의 주문 목록
 curl ".../users/1/orders"
 
-# 관계 확장: 주문에 상품 정보 포함
+# 관계 확장 (1단계): 주문에 상품 정보 포함
 curl ".../orders?_expand=product"
 # → { "id": 1, "status": "shipped", "product": { "name": "맥북 프로", ... } }
 
-# 관계 임베드: 유저에 주문 목록 포함
+# 관계 임베드 (1단계): 유저에 주문 목록 포함
 curl ".../users/1?_embed=orders"
 ```
 
-> Envelope 모드 켜면 `{ data, meta, links }` 래핑 + RFC 7807 에러 포맷
+### 깊은 관계 (다단계)
+
+```bash
+# 리뷰 → 상품 → 카테고리 (3단계 expand)
+curl ".../reviews?_expand=product,product.category"
+# → { "body": "최고!", "product": { "name": "맥북", "category": { "name": "노트북" } } }
+
+# 유저 → 주문 → 주문상품 (3단계 embed)
+curl ".../users/1?_embed=orders,orders.orderItems"
+# → { "name": "Kim", "orders": [{ "status": "shipped", "orderItems": [{ "productId": 1, "qty": 2 }] }] }
+```
+
+> dot notation으로 관계 체인 표현. 최대 3단계. Envelope 모드 켜면 `{ data, meta, links }` 래핑.
 
 ---
 
@@ -173,22 +185,42 @@ curl -H 'If-None-Match: "a1b2c3..."' http://localhost:3001/m/{mockId}/products
 
 ---
 
-## Demo 5: GraphQL도 동시에 (15초)
+## Demo 5: GraphQL — 관계까지 한번에 (20초)
 
-별도 설정 없이 같은 Mock에서 REST + GraphQL 동시 사용.
+별도 설정 없이 REST + GraphQL 동시 사용. FK를 자동 감지하여 관계 필드도 생성.
 
 ```bash
+# 유저 → 게시글 → 댓글 → 댓글 작성자까지 한 쿼리로
 curl -X POST http://localhost:3001/m/{mockId}/graphql \
   -H "Content-Type: application/json" \
-  -d '{"query": "{ products { id name price } orders { id status } }"}'
+  -d '{"query": "{ users { id name posts { title comments { body user { name } } } } }"}'
+```
+
+```json
+{
+  "data": {
+    "users": [{
+      "name": "Kim",
+      "posts": [{
+        "title": "Hello",
+        "comments": [
+          { "body": "nice post", "user": { "name": "Lee" } },
+          { "body": "thanks", "user": { "name": "Kim" } }
+        ]
+      }]
+    }]
+  }
+}
 ```
 
 ```bash
-# Mutation도 가능
+# Mutation
 curl -X POST http://localhost:3001/m/{mockId}/graphql \
   -H "Content-Type: application/json" \
   -d '{"query": "mutation { createProduct(input: {name: \"아이폰\", price: 1500000}) { id name } }"}'
 ```
+
+> FK 필드(`userId`, `postId` 등)가 있으면 `User.posts`, `Post.user`, `Comment.post` 관계가 자동 생성됩니다.
 
 ---
 
@@ -227,6 +259,7 @@ IDE에서 나가지 않고 Mock 생성.
 | Postman Mock 설정 | 자연어 "쇼핑몰 API 만들어줘" |
 | REST만 또는 GraphQL만 | REST + GraphQL 동시 생성 |
 | 쿼리 안 되는 Mock | 필터/정렬/페이지네이션/관계/커서 |
+| 관계 1단계만 | 다단계 관계 (user→posts→comments, 최대 3단계) |
 | 에러 테스트 불가 | 지연, 에러율, 인증, ETag, Idempotency |
 | 테스트 후 데이터 오염 | `POST /reset` 한 줄로 복원 |
 

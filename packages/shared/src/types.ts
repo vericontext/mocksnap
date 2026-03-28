@@ -22,14 +22,29 @@ export interface MockDefinition {
   createdAt: string;
 }
 
+export interface DelayConfig {
+  type: 'uniform' | 'normal';
+  min?: number;
+  max?: number;
+  mean?: number;
+  sigma?: number;
+}
+
+export interface AuthConfig {
+  type: 'apiKey' | 'bearer';
+  key?: string;
+}
+
 export interface ResourceConfig {
-  delay?: number;
+  delay?: number | DelayConfig;
   errorRate?: number;
   errorStatus?: number;
   forceStatus?: number;
   webhookUrl?: string;
+  webhookSecret?: string;
   envelope?: boolean;
   rateLimit?: number;
+  auth?: AuthConfig;
 }
 
 export interface RequestLog {

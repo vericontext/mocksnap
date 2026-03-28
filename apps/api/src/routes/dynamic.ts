@@ -1,9 +1,9 @@
 import { Hono } from 'hono';
 import type { Context } from 'hono';
-import { createHash } from 'node:crypto';
+import { createHash, createHmac } from 'node:crypto';
 import { db } from '../db/connection.js';
 import { getAllRows, getRowById, insertRow, updateRow, deleteRow, queryRows } from '../db/mock-tables.js';
-import type { ResourceConfig } from '@mocksnap/shared';
+import type { ResourceConfig, DelayConfig } from '@mocksnap/shared';
 
 const dynamic = new Hono();
 
@@ -13,18 +13,43 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function computeDelay(delay: number | DelayConfig): number {
+  if (typeof delay === 'number') return delay;
+  if (delay.type === 'uniform') {
+    const min = delay.min ?? 0;
+    const max = delay.max ?? 1000;
+    return min + Math.random() * (max - min);
+  }
+  if (delay.type === 'normal') {
+    const mean = delay.mean ?? 200;
+    const sigma = delay.sigma ?? 50;
+    // Box-Muller transform
+    const u1 = Math.random();
+    const u2 = Math.random();
+    const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+    return Math.max(0, mean + z * sigma);
+  }
+  return 0;
+}
+
 function logRequest(mockId: string, method: string, path: string, status: number, requestBody?: string, responseBody?: string) {
   db.prepare(
     'INSERT INTO request_logs (mock_id, method, path, status, request_body, response_body) VALUES (?, ?, ?, ?, ?, ?)'
   ).run(mockId, method, path, status, requestBody ?? null, responseBody ?? null);
 }
 
-function fireWebhook(webhookUrl: string, event: string, resource: string, data: unknown) {
-  fetch(webhookUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ event, resource, data, timestamp: new Date().toISOString() }),
-  }).catch(() => {});
+function fireWebhook(webhookUrl: string, event: string, resource: string, data: unknown, secret?: string) {
+  const timestamp = Math.floor(Date.now() / 1000);
+  const body = JSON.stringify({ event, resource, data, timestamp: new Date().toISOString() });
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+
+  if (secret) {
+    const signature = createHmac('sha256', secret).update(`${timestamp}.${body}`).digest('hex');
+    headers['X-MockSnap-Signature'] = `sha256=${signature}`;
+    headers['X-MockSnap-Timestamp'] = String(timestamp);
+  }
+
+  fetch(webhookUrl, { method: 'POST', headers, body }).catch(() => {});
 }
 
 function getResourceConfig(mockId: string, resource: string): ResourceConfig | null {
@@ -182,9 +207,21 @@ function embedRelations(mockId: string, rows: unknown[], resourceName: string, e
   });
 }
 
+// --- Idempotency ---
+
+const idempotencyCache = new Map<string, { response: unknown; status: number; createdAt: number }>();
+
+// Clean expired keys every hour
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of idempotencyCache) {
+    if (now - entry.createdAt > 24 * 60 * 60 * 1000) idempotencyCache.delete(key);
+  }
+}, 60 * 60 * 1000);
+
 // --- Query Parsing ---
 
-const RESERVED_PARAMS = new Set(['sort', 'order', 'page', 'limit', 'q', '_expand', '_embed', 'fields']);
+const RESERVED_PARAMS = new Set(['sort', 'order', 'page', 'limit', 'q', '_expand', '_embed', 'fields', 'cursor']);
 
 function parseQueryOptions(query: Record<string, string>) {
   const filters: Record<string, string> = {};
@@ -201,6 +238,7 @@ function parseQueryOptions(query: Record<string, string>) {
     _expand: query._expand ? query._expand.split(',') : undefined,
     _embed: query._embed ? query._embed.split(',') : undefined,
     fields: query.fields ? query.fields.split(',') : undefined,
+    cursor: query.cursor,
   };
 }
 
@@ -228,7 +266,26 @@ async function validateAndApplyConfig(c: Context, next: () => Promise<void>) {
 
   const config: ResourceConfig = JSON.parse(res.config_json || '{}');
 
-  if (config.delay && config.delay > 0) await sleep(config.delay);
+  // Auth check
+  if (config.auth) {
+    const { type, key } = config.auth;
+    if (type === 'apiKey') {
+      const provided = c.req.header('X-API-Key');
+      if (!provided) return problemJson(c, 401, 'Missing X-API-Key header');
+      if (key && provided !== key) return problemJson(c, 401, 'Invalid API key');
+    } else if (type === 'bearer') {
+      const authHeader = c.req.header('Authorization');
+      const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+      if (!token) return problemJson(c, 401, 'Missing Authorization: Bearer token');
+      if (key && token !== key) return problemJson(c, 401, 'Invalid bearer token');
+    }
+  }
+
+  // Delay (fixed or distribution)
+  if (config.delay) {
+    const ms = computeDelay(config.delay);
+    if (ms > 0) await sleep(ms);
+  }
 
   if (config.forceStatus) {
     logRequest(mockId, c.req.method, c.req.path, config.forceStatus);
@@ -255,7 +312,7 @@ dynamic.get('/:mockId/:resource', (c) => {
   const opts = parseQueryOptions(c.req.query());
   const config = getResourceConfig(mockId, resource);
 
-  const { data, total } = queryRows(mockId, resource, opts);
+  const { data, total, hasMore, nextCursor } = queryRows(mockId, resource, opts);
 
   let result = data;
   if (opts._expand) result = expandRelations(mockId, result, opts._expand);
@@ -276,25 +333,37 @@ dynamic.get('/:mockId/:resource', (c) => {
   // Build response body
   let responseBody: unknown;
   if (config?.envelope) {
-    const page = opts.page ?? 1;
-    const limit = opts.limit ?? total;
-    const totalPages = limit > 0 ? Math.ceil(total / limit) : 1;
-    const basePath = c.req.path;
-    const buildUrl = (p: number) => `${basePath}?page=${p}&limit=${limit}`;
+    if (opts.cursor) {
+      // Cursor-based envelope
+      responseBody = {
+        data: result,
+        has_more: hasMore ?? false,
+        next_cursor: nextCursor ?? null,
+      };
+    } else {
+      const page = opts.page ?? 1;
+      const limit = opts.limit ?? total;
+      const totalPages = limit > 0 ? Math.ceil(total / limit) : 1;
+      const basePath = c.req.path;
+      const buildUrl = (p: number) => `${basePath}?page=${p}&limit=${limit}`;
 
-    responseBody = {
-      data: result,
-      meta: { total, page, limit, totalPages },
-      links: {
-        self: buildUrl(page),
-        first: buildUrl(1),
-        last: buildUrl(totalPages),
-        next: page < totalPages ? buildUrl(page + 1) : null,
-        prev: page > 1 ? buildUrl(page - 1) : null,
-      },
-    };
+      responseBody = {
+        data: result,
+        meta: { total, page, limit, totalPages },
+        links: {
+          self: buildUrl(page),
+          first: buildUrl(1),
+          last: buildUrl(totalPages),
+          next: page < totalPages ? buildUrl(page + 1) : null,
+          prev: page > 1 ? buildUrl(page - 1) : null,
+        },
+      };
+    }
   } else {
     responseBody = result;
+    // Cursor info in headers when not using envelope
+    if (opts.cursor && nextCursor) c.header('X-Next-Cursor', nextCursor);
+    if (opts.cursor && hasMore !== undefined) c.header('X-Has-More', String(hasMore));
   }
 
   // ETag + conditional
@@ -375,6 +444,18 @@ dynamic.get('/:mockId/:resource/:id/:subResource', (c) => {
 dynamic.post('/:mockId/:resource', async (c) => {
   const mockId = c.req.param('mockId');
   const resource = c.req.param('resource');
+
+  // Idempotency key check
+  const idempotencyKey = c.req.header('Idempotency-Key');
+  if (idempotencyKey) {
+    const cacheKey = `${mockId}:${resource}:${idempotencyKey}`;
+    const cached = idempotencyCache.get(cacheKey);
+    if (cached) {
+      applyCommonHeaders(c, mockId, resource);
+      return c.json(cached.response, cached.status as 200);
+    }
+  }
+
   const body = await c.req.json() as Record<string, unknown>;
   const now = new Date().toISOString();
   body.createdAt ??= now;
@@ -390,7 +471,14 @@ dynamic.post('/:mockId/:resource', async (c) => {
   logRequest(mockId, 'POST', c.req.path, 201, JSON.stringify(body), JSON.stringify(result.data));
 
   const config = getResourceConfig(mockId, resource);
-  if (config?.webhookUrl) fireWebhook(config.webhookUrl, 'created', resource, result.data);
+
+  // Cache idempotency response
+  if (idempotencyKey) {
+    const cacheKey = `${mockId}:${resource}:${idempotencyKey}`;
+    const responseData = config?.envelope ? { data: result.data } : result.data;
+    idempotencyCache.set(cacheKey, { response: responseData, status: 201, createdAt: Date.now() });
+  }
+  if (config?.webhookUrl) fireWebhook(config.webhookUrl, 'created', resource, result.data, config.webhookSecret);
 
   return c.json(config?.envelope ? { data: result.data } : result.data, 201);
 });
@@ -412,7 +500,7 @@ dynamic.put('/:mockId/:resource/:id', async (c) => {
   logRequest(mockId, 'PUT', c.req.path, 200, JSON.stringify(body), JSON.stringify(updated));
 
   const config = getResourceConfig(mockId, resource);
-  if (config?.webhookUrl) fireWebhook(config.webhookUrl, 'updated', resource, updated);
+  if (config?.webhookUrl) fireWebhook(config.webhookUrl, 'updated', resource, updated, config.webhookSecret);
 
   return c.json(config?.envelope ? { data: updated } : updated);
 });
@@ -434,7 +522,7 @@ dynamic.patch('/:mockId/:resource/:id', async (c) => {
   logRequest(mockId, 'PATCH', c.req.path, 200, JSON.stringify(body), JSON.stringify(updated));
 
   const config = getResourceConfig(mockId, resource);
-  if (config?.webhookUrl) fireWebhook(config.webhookUrl, 'updated', resource, updated);
+  if (config?.webhookUrl) fireWebhook(config.webhookUrl, 'updated', resource, updated, config.webhookSecret);
 
   return c.json(config?.envelope ? { data: updated } : updated);
 });
@@ -457,7 +545,7 @@ dynamic.delete('/:mockId/:resource/:id', (c) => {
   logRequest(mockId, 'DELETE', c.req.path, 200);
 
   const config = getResourceConfig(mockId, resource);
-  if (config?.webhookUrl) fireWebhook(config.webhookUrl, 'deleted', resource, item);
+  if (config?.webhookUrl) fireWebhook(config.webhookUrl, 'deleted', resource, item, config.webhookSecret);
 
   return c.json({ message: 'Deleted' });
 });

@@ -196,11 +196,11 @@ mocksnap/
 - [x] **ETag + 304** — 조건부 요청 (`If-None-Match` → `304 Not Modified`), React Query/SWR 캐시 테스트
 - [x] **데이터 리셋** — `POST /api/mocks/:id/reset` 시드 데이터 복원, E2E 테스트 필수
 - [x] **자동 timestamp** — POST 시 `createdAt`, PATCH 시 `updatedAt` 자동 주입
-- [ ] **커서 기반 페이지네이션** — `?cursor=xxx&limit=10`, Stripe/Shopify 표준
-- [ ] **Faker.js 스마트 데이터** — 필드명에서 의미 감지 (email→이메일, phone→전화번호)
-- [ ] **Idempotency Key** — `Idempotency-Key` 헤더로 중복 요청 방지 (Stripe 패턴)
-- [ ] **Webhook HMAC 서명** — `X-MockSnap-Signature` HMAC-SHA256 검증 헤더
-- [ ] **지연 분포** — 고정 delay 외에 uniform/normal 분포 지원
+- [x] **커서 기반 페이지네이션** — `?cursor=xxx&limit=10`, Stripe/Shopify 표준
+- [x] **Faker.js 스마트 데이터** — 필드명에서 의미 감지 (email→이메일, phone→전화번호)
+- [x] **Idempotency Key** — `Idempotency-Key` 헤더로 중복 요청 방지 (Stripe 패턴)
+- [x] **Webhook HMAC 서명** — `X-MockSnap-Signature` HMAC-SHA256 검증 헤더
+- [x] **지연 분포** — 고정 delay 외에 uniform/normal 분포 지원
 
 ### 플랫폼 확장
 
@@ -215,6 +215,15 @@ mocksnap/
 - [ ] SSE/Streaming — `text/event-stream` 실시간 엔드포인트
 
 ## Changelog
+
+### v0.7.0 (2026-03-28) — Production API 패턴
+
+- Auth 시뮬레이션: API Key (`X-API-Key`) / Bearer Token 검증, 401 응답
+- 커서 기반 페이지네이션: `?cursor=xxx&limit=10` → `{ data, has_more, next_cursor }` (Stripe 패턴)
+- Webhook HMAC 서명: `X-MockSnap-Signature` + `X-MockSnap-Timestamp` 헤더
+- 지연 분포: 고정(ms), uniform(min~max), normal(mean±sigma) 지원
+- Idempotency Key: `Idempotency-Key` 헤더로 중복 POST 방지 (24시간 캐싱)
+- Faker.js 스마트 데이터: AI 키 없이도 필드명 감지하여 리얼 데이터 자동 생성
 
 ### v0.6.0 (2026-03-28) — 캐시, 리셋, 타임스탬프
 

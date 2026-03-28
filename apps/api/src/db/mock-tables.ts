@@ -50,8 +50,9 @@ export function queryRows(
     page?: number;
     limit?: number;
     q?: string;
+    cursor?: string;
   }
-): { data: unknown[]; total: number } {
+): { data: unknown[]; total: number; nextCursor?: string; hasMore?: boolean } {
   const name = tableName(mockId, resourceName);
   const conditions: string[] = [];
   const params: unknown[] = [];
@@ -93,10 +94,25 @@ export function queryRows(
     params.push(`%${options.q}%`);
   }
 
+  // Cursor-based pagination
+  if (options.cursor) {
+    try {
+      const decoded = JSON.parse(Buffer.from(options.cursor, 'base64').toString());
+      if (decoded.id !== undefined) {
+        conditions.push(`json_extract(data, '$.id') > ?`);
+        params.push(decoded.id);
+      }
+    } catch { /* invalid cursor, ignore */ }
+  }
+
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-  // Total count
-  const countRow = db.prepare(`SELECT COUNT(*) as cnt FROM "${name}" ${whereClause}`).get(...params) as { cnt: number };
+  // Total count (without cursor filter for accurate total)
+  const countParams = options.cursor ? params.slice(0, -1) : params;
+  const countWhere = options.cursor && conditions.length > 1
+    ? `WHERE ${conditions.slice(0, -1).join(' AND ')}`
+    : options.cursor ? '' : whereClause;
+  const countRow = db.prepare(`SELECT COUNT(*) as cnt FROM "${name}" ${countWhere}`).get(...countParams) as { cnt: number };
   const total = countRow.cnt;
 
   // Sorting
@@ -105,24 +121,40 @@ export function queryRows(
     const safeSort = options.sort.replace(/[^a-zA-Z0-9_]/g, '');
     const dir = options.order === 'desc' ? 'DESC' : 'ASC';
     orderClause = `ORDER BY json_extract(data, '$.${safeSort}') ${dir}`;
+  } else if (options.cursor) {
+    orderClause = 'ORDER BY json_extract(data, \'$.id\') ASC';
   }
 
   // Pagination
   let limitClause = '';
   const limitParams: unknown[] = [];
-  if (options.page && options.limit) {
+  if (options.page && options.limit && !options.cursor) {
     limitClause = 'LIMIT ? OFFSET ?';
     limitParams.push(options.limit, (options.page - 1) * options.limit);
   } else if (options.limit) {
+    // Fetch one extra to determine has_more
     limitClause = 'LIMIT ?';
-    limitParams.push(options.limit);
+    limitParams.push(options.cursor ? options.limit + 1 : options.limit);
   }
 
   const rows = db.prepare(
     `SELECT _row_id, data FROM "${name}" ${whereClause} ${orderClause} ${limitClause}`
   ).all(...params, ...limitParams) as { _row_id: number; data: string }[];
 
-  return { data: rows.map((r) => JSON.parse(r.data)), total };
+  const parsed = rows.map((r) => JSON.parse(r.data));
+
+  // Cursor pagination result
+  if (options.cursor && options.limit) {
+    const hasMore = parsed.length > options.limit;
+    const items = hasMore ? parsed.slice(0, options.limit) : parsed;
+    const lastItem = items[items.length - 1] as Record<string, unknown> | undefined;
+    const nextCursor = hasMore && lastItem?.id !== undefined
+      ? Buffer.from(JSON.stringify({ id: lastItem.id })).toString('base64')
+      : undefined;
+    return { data: items, total, hasMore, nextCursor };
+  }
+
+  return { data: parsed, total };
 }
 
 export function getRowById(mockId: string, resourceName: string, id: string): unknown | null {

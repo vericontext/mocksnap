@@ -1,9 +1,84 @@
+import { faker } from '@faker-js/faker';
 import type { FieldDefinition, FieldType } from '@mocksnap/shared';
 
 interface InferredResource {
   name: string;
   fields: FieldDefinition[];
   seedData: unknown[];
+}
+
+// Field name → Faker generator mapping
+const FAKER_MAP: Record<string, () => unknown> = {
+  email: () => faker.internet.email(),
+  name: () => faker.person.fullName(),
+  firstName: () => faker.person.firstName(),
+  first_name: () => faker.person.firstName(),
+  lastName: () => faker.person.lastName(),
+  last_name: () => faker.person.lastName(),
+  phone: () => faker.phone.number(),
+  address: () => faker.location.streetAddress(),
+  city: () => faker.location.city(),
+  country: () => faker.location.country(),
+  zip: () => faker.location.zipCode(),
+  zipCode: () => faker.location.zipCode(),
+  company: () => faker.company.name(),
+  title: () => faker.lorem.sentence({ min: 3, max: 8 }),
+  description: () => faker.lorem.paragraph(),
+  body: () => faker.lorem.paragraphs(2),
+  content: () => faker.lorem.paragraphs(2),
+  bio: () => faker.lorem.sentence(),
+  url: () => faker.internet.url(),
+  website: () => faker.internet.url(),
+  avatar: () => faker.image.avatar(),
+  image: () => faker.image.url(),
+  username: () => faker.internet.username(),
+  password: () => faker.internet.password(),
+  price: () => Number(faker.commerce.price()),
+  amount: () => Number(faker.finance.amount()),
+  color: () => faker.color.human(),
+  category: () => faker.commerce.department(),
+  status: () => faker.helpers.arrayElement(['active', 'inactive', 'pending']),
+  role: () => faker.helpers.arrayElement(['admin', 'user', 'editor']),
+  age: () => faker.number.int({ min: 18, max: 65 }),
+  rating: () => faker.number.float({ min: 1, max: 5, fractionDigits: 1 }),
+  lat: () => faker.location.latitude(),
+  lng: () => faker.location.longitude(),
+  latitude: () => faker.location.latitude(),
+  longitude: () => faker.location.longitude(),
+};
+
+export function generateSmartValue(fieldName: string, fieldType: FieldType): unknown {
+  const lower = fieldName.toLowerCase();
+
+  // Exact match
+  if (FAKER_MAP[fieldName]) return FAKER_MAP[fieldName]();
+
+  // Partial match
+  for (const [pattern, gen] of Object.entries(FAKER_MAP)) {
+    if (lower.includes(pattern.toLowerCase())) return gen();
+  }
+
+  // Type-based fallback
+  switch (fieldType) {
+    case 'string': return faker.lorem.word();
+    case 'number': return faker.number.int({ min: 1, max: 1000 });
+    case 'boolean': return faker.datatype.boolean();
+    default: return null;
+  }
+}
+
+export function generateFakerData(fields: FieldDefinition[], count: number, startId: number = 1): unknown[] {
+  return Array.from({ length: count }, (_, i) => {
+    const item: Record<string, unknown> = {};
+    for (const field of fields) {
+      if (field.name === 'id') {
+        item.id = startId + i;
+      } else {
+        item[field.name] = generateSmartValue(field.name, field.type);
+      }
+    }
+    return item;
+  });
 }
 
 function inferFieldType(value: unknown): FieldType {

@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid';
 import { db } from '../db/connection.js';
 import { createMockDataTable, dropMockDataTables, insertRow } from '../db/mock-tables.js';
-import { inferSchema } from './schema-inferrer.js';
+import { inferSchema, generateFakerData } from './schema-inferrer.js';
 import { generateFromPrompt, amplifyData } from './ai-service.js';
 import { parseOpenAPISpec } from './openapi-parser.js';
 import type { MockDefinition, MockListItem, ResourceDefinition, CreateMockRequest } from '@mocksnap/shared';
@@ -62,6 +62,16 @@ export async function createMock(request: CreateMockRequest): Promise<MockDefini
       } catch {
         // If amplification fails, continue with original seed data
       }
+    }
+  } else if (request.amplify !== false && !hasAI && !request.prompt && !fromOpenAPI) {
+    // Faker.js fallback when no AI key available
+    for (const resource of resources) {
+      const maxId = resource.seedData.reduce((max, item) => {
+        const id = (item as Record<string, unknown>)?.id;
+        return typeof id === 'number' && id > max ? id : max;
+      }, 0);
+      const fakerData = generateFakerData(resource.fields, amplifyCount, maxId + 1);
+      resource.seedData.push(...fakerData);
     }
   }
 

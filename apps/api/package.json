@@ -16,6 +16,7 @@
     "@mocksnap/shared": "workspace:*",
     "@modelcontextprotocol/sdk": "^1",
     "better-sqlite3": "^11",
+    "@faker-js/faker": "^9",
     "dotenv": "^16",
     "graphql": "^16",
     "graphql-yoga": "^5",

@@ -16,7 +16,7 @@ function extractJson(text: string): string {
 export async function generateFromPrompt(prompt: string, apiKey?: string): Promise<Record<string, unknown[]>> {
   const client = getClient(apiKey);
   const response = await client.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-4-6',
     max_tokens: 4096,
     system: `You are an API schema designer. Given a natural language description, generate a JSON object with realistic sample data for a REST API.
 
@@ -59,7 +59,7 @@ export async function amplifyData(
   }, 0);
 
   const response = await client.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-4-6',
     max_tokens: 4096,
     system: `You are a realistic data generator. Given a schema and sample data, generate more items that match the exact same pattern, field names, and style.
 
@@ -109,7 +109,7 @@ export async function modifyMockSchema(
   const resourceNames = currentResources.map((r) => r.name);
 
   const response = await client.messages.create({
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-4-6',
     max_tokens: 8192,
     system: `You are a precise API schema modifier. Your job is to apply the user's requested changes to an existing API schema and return the updated version.
 

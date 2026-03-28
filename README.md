@@ -31,8 +31,8 @@ ER diagram, endpoints, API docs, and GraphQL schema update instantly.
 Both endpoints are auto-generated from the same schema.
 
 ```
-REST:    https://api.mocksnap.dev/m/{mockId}/users
-GraphQL: https://api.mocksnap.dev/m/{mockId}/graphql
+REST:    http://localhost:3001/m/{mockId}/users
+GraphQL: http://localhost:3001/m/{mockId}/graphql
 ```
 
 ### AI-Powered Realistic Data

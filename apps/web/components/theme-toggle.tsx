@@ -3,11 +3,11 @@
 import { useEffect, useState } from 'react';
 
 export default function ThemeToggle() {
-  const [dark, setDark] = useState(true);
+  const [dark, setDark] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem('mocksnap_theme');
-    const isDark = saved ? saved === 'dark' : true;
+    const isDark = saved ? saved === 'dark' : false;
     setDark(isDark);
     document.documentElement.classList.toggle('dark', isDark);
   }, []);

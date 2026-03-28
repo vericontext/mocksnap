@@ -16,7 +16,7 @@ const JSON_PLACEHOLDER = `{
   ]
 }`;
 
-const PROMPT_PLACEHOLDER = `유저 CRUD API + 주문 목록, 한국어 데이터로 생성해줘
+const PROMPT_PLACEHOLDER = `User CRUD API + order list, generate with realistic data
 
 Examples:
 - "E-commerce API with users, products, and orders"
@@ -254,7 +254,7 @@ export default function JsonInput() {
       <button
         onClick={handleSubmit}
         disabled={loading}
-        className="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 disabled:text-gray-400 rounded-lg font-medium transition-colors cursor-pointer"
+        className="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:text-gray-400 rounded-lg font-medium transition-colors cursor-pointer"
       >
         {loading
           ? isAI ? 'AI is generating data...' : 'Generating...'

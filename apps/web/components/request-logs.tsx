@@ -37,7 +37,7 @@ export default function RequestLogs({ mockId }: Props) {
         <h3 className="font-medium">Request Logs</h3>
         <button
           onClick={load}
-          className="px-3 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors cursor-pointer"
+          className="px-3 py-1 text-xs bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded transition-colors cursor-pointer"
         >
           Refresh
         </button>

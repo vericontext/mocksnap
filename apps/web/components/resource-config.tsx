@@ -134,7 +134,7 @@ export default function ResourceConfigPanel({ mockId, resource }: Props) {
       <button
         onClick={() => save(config)}
         disabled={saving}
-        className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 rounded text-sm transition-colors cursor-pointer"
+        className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-300 dark:disabled:bg-gray-700 rounded text-sm transition-colors cursor-pointer"
       >
         {saving ? 'Saving...' : 'Save Config'}
       </button>

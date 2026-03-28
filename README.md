@@ -2,76 +2,76 @@
 
 > Paste JSON, describe in words, or drop an OpenAPI spec — get a live REST + GraphQL API in seconds.
 
-MockSnap은 프론트엔드-백엔드 디커플링을 위한 AI 기반 Mock API 생성기입니다. JSON 샘플, 자연어 프롬프트, OpenAPI 스펙 중 아무거나 입력하면 즉시 살아있는 API를 만들어줍니다.
+MockSnap is an AI-powered Mock API generator for frontend-backend decoupling. Provide a JSON sample, natural language prompt, or OpenAPI spec — and get a live API instantly.
 
 ## Features
 
-### 3가지 입력 모드
+### 3 Input Modes
 
-- **JSON** — 샘플 데이터 붙여넣기 → 스키마 자동 추론
-- **Natural Language** — `"유저 CRUD API + 주문 목록, 한국어 데이터"` → AI가 스키마 + 데이터 생성
-- **OpenAPI Spec** — OpenAPI 3.x JSON/YAML → 스키마 기반 리얼 데이터 생성
+- **JSON** — Paste sample data -> auto-infer schema
+- **Natural Language** — `"User CRUD API + order list with realistic data"` -> AI generates schema + data
+- **OpenAPI Spec** — OpenAPI 3.x JSON/YAML -> realistic data generation based on schema
 
-### REST + GraphQL 동시 생성
+### REST + GraphQL Generated Simultaneously
 
-같은 스키마에서 양쪽 엔드포인트가 자동 생성됩니다.
+Both endpoints are auto-generated from the same schema.
 
 ```
 REST:    http://localhost:3001/m/{mockId}/users
 GraphQL: http://localhost:3001/m/{mockId}/graphql
 ```
 
-### AI 기반 리얼 데이터
+### AI-Powered Realistic Data
 
-Claude API를 활용하여 컨텍스트 인식 데이터를 생성합니다.
-- 한국어 이름, 현실적 나이(20~60), 유효 이메일, 한국 전화번호 등
-- JSON 입력 시 시드 1~2건 → 10건으로 자동 증폭
+Leverages Claude API to generate context-aware data.
+- Realistic names, ages (20~60), valid emails, phone numbers, etc.
+- JSON input: seed 1~2 items -> auto-amplify to 10 items
 
 ### Stateful CRUD
 
-POST로 만든 데이터가 GET에 반영됩니다. SQLite로 데이터를 영속화합니다.
+Data created via POST is reflected in GET responses. SQLite persists the data.
 
 ```bash
-POST /m/{id}/users  {"name":"Kim"}   # 생성
-GET  /m/{id}/users                    # Kim 포함 반환
+POST /m/{id}/users  {"name":"Kim"}   # Create
+GET  /m/{id}/users                    # Returns including Kim
 ```
 
-### 응답 커스텀
+### Response Customization
 
-리소스별로 엣지 케이스를 시뮬레이션할 수 있습니다.
+Simulate edge cases per resource.
 
-| 설정 | 설명 |
-|------|------|
-| Delay | 응답 지연 (ms) |
-| Error Rate | 랜덤 에러 발생 확률 (0~100%) |
-| Error Status | 에러 시 HTTP 상태 코드 (400, 500, 503 등) |
-| Force Status | 모든 응답을 특정 상태 코드로 강제 |
+| Setting | Description |
+|---------|-------------|
+| Delay | Response delay (ms) |
+| Error Rate | Random error probability (0~100%) |
+| Error Status | HTTP status code on error (400, 500, 503, etc.) |
+| Force Status | Force all responses to a specific status code |
 
-### Webhook 시뮬레이션
+### Webhook Simulation
 
-리소스에 webhook URL을 설정하면 CRUD 발생 시 이벤트 payload를 자동 전송합니다.
+Set a webhook URL on a resource, and event payloads are automatically sent on CRUD operations.
 
 ```json
 { "event": "created", "resource": "users", "data": {...}, "timestamp": "..." }
 ```
 
-### Request 로그
+### Request Logs
 
-Mock API로 들어온 모든 요청/응답을 기록합니다. 대시보드에서 실시간 확인 가능합니다.
+All requests/responses to the Mock API are recorded. Viewable in real-time on the dashboard.
 
-### MCP 서버
+### MCP Server
 
-Claude Code, Cursor 등에서 직접 Mock API를 생성/관리할 수 있습니다.
+Create and manage Mock APIs directly from Claude Code, Cursor, etc.
 
 ```bash
-# Claude Code에 등록
+# Register with Claude Code
 claude mcp add mocksnap -- npx tsx /path/to/apps/api/src/mcp-server.ts
 
-# 이후 Claude Code에서:
-# "유저 CRUD API 만들어줘" → create_mock 도구 자동 호출
+# Then in Claude Code:
+# "Create a user CRUD API" -> auto-calls create_mock tool
 ```
 
-MCP 도구: `create_mock`, `list_mocks`, `get_mock`, `delete_mock`
+MCP tools: `create_mock`, `list_mocks`, `get_mock`, `delete_mock`
 
 ## Quick Start
 
@@ -79,32 +79,32 @@ MCP 도구: `create_mock`, `list_mocks`, `get_mock`, `delete_mock`
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/vericontext/mocksnap&root-directory=apps/web)
 
-### 요구사항
+### Requirements
 
 - Node.js 20+
 - pnpm 10+
 
-### 설치 & 실행
+### Install & Run
 
 ```bash
 git clone https://github.com/vericontext/mocksnap.git
 cd mocksnap
 pnpm install
 
-# AI 기능 사용 시 (선택)
+# For AI features (optional)
 echo "ANTHROPIC_API_KEY=sk-ant-..." > apps/api/.env
 
-# 실행
+# Run
 pnpm dev
 ```
 
 - Web UI: http://localhost:3000
 - API: http://localhost:3001
 
-### 빠른 테스트 (CLI)
+### Quick Test (CLI)
 
 ```bash
-# JSON으로 Mock 생성
+# Create Mock with JSON
 curl -X POST http://localhost:3001/api/mocks \
   -H "Content-Type: application/json" \
   -d '{
@@ -115,12 +115,12 @@ curl -X POST http://localhost:3001/api/mocks \
     }
   }'
 
-# 자연어로 Mock 생성 (ANTHROPIC_API_KEY 필요)
+# Create Mock with natural language (requires ANTHROPIC_API_KEY)
 curl -X POST http://localhost:3001/api/mocks \
   -H "Content-Type: application/json" \
-  -d '{"name": "E-commerce", "prompt": "유저, 상품, 주문 API, 한국어 데이터"}'
+  -d '{"name": "E-commerce", "prompt": "Users, products, and orders API with realistic data"}'
 
-# GraphQL 쿼리
+# GraphQL query
 curl -X POST http://localhost:3001/m/{mockId}/graphql \
   -H "Content-Type: application/json" \
   -d '{"query": "{ users { id name email } }"}'
@@ -128,8 +128,8 @@ curl -X POST http://localhost:3001/m/{mockId}/graphql \
 
 ## Tech Stack
 
-| 레이어 | 기술 |
-|--------|------|
+| Layer | Technology |
+|-------|------------|
 | Monorepo | pnpm workspace + Turborepo |
 | Frontend | Next.js 15 (App Router) + Tailwind CSS 4 |
 | Backend | Hono + Node.js |
@@ -143,155 +143,155 @@ curl -X POST http://localhost:3001/m/{mockId}/graphql \
 ```
 mocksnap/
 ├── apps/
-│   ├── api/                    # Hono 백엔드 (port 3001)
+│   ├── api/                    # Hono backend (port 3001)
 │   │   └── src/
-│   │       ├── index.ts        # HTTP 서버 엔트리포인트
-│   │       ├── mcp-server.ts   # MCP 서버 엔트리포인트
-│   │       ├── db/             # SQLite 연결, 스키마, 동적 테이블
-│   │       ├── routes/         # REST CRUD, GraphQL, Config, 로그
-│   │       └── services/       # 스키마 추론, AI, OpenAPI 파서, GraphQL 빌더
-│   └── web/                    # Next.js 프론트엔드 (port 3000)
-│       ├── app/                # 페이지 (랜딩, Mock 대시보드, 목록)
-│       ├── components/         # JSON 입력, 엔드포인트 목록, 플레이그라운드, 로그
-│       └── lib/                # API 클라이언트
+│   │       ├── index.ts        # HTTP server entry point
+│   │       ├── mcp-server.ts   # MCP server entry point
+│   │       ├── db/             # SQLite connection, schema, dynamic tables
+│   │       ├── routes/         # REST CRUD, GraphQL, Config, logs
+│   │       └── services/       # Schema inference, AI, OpenAPI parser, GraphQL builder
+│   └── web/                    # Next.js frontend (port 3000)
+│       ├── app/                # Pages (landing, Mock dashboard, list)
+│       ├── components/         # JSON input, endpoint list, playground, logs
+│       └── lib/                # API client
 └── packages/
-    └── shared/                 # 공유 타입 및 상수
+    └── shared/                 # Shared types and constants
 ```
 
 ## API Reference
 
-### Mock 관리
+### Mock Management
 
-| Method | Path | 설명 |
-|--------|------|------|
-| POST | `/api/mocks` | Mock 생성 (JSON/prompt/OpenAPI) |
-| GET | `/api/mocks` | 전체 Mock 목록 |
-| GET | `/api/mocks/:id` | Mock 상세 |
-| DELETE | `/api/mocks/:id` | Mock 삭제 |
-| GET | `/api/mocks/:id/logs` | Request 로그 (최근 100건) |
-| PATCH | `/api/mocks/:id/resources/:name/config` | 리소스 설정 변경 |
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/mocks` | Create Mock (JSON/prompt/OpenAPI) |
+| GET | `/api/mocks` | List all Mocks |
+| GET | `/api/mocks/:id` | Mock details |
+| DELETE | `/api/mocks/:id` | Delete Mock |
+| GET | `/api/mocks/:id/logs` | Request logs (last 100) |
+| PATCH | `/api/mocks/:id/resources/:name/config` | Update resource config |
 
-### 동적 Mock API
+### Dynamic Mock API
 
-| Method | Path | 설명 |
-|--------|------|------|
-| GET | `/m/:mockId/:resource` | 전체 조회 |
-| GET | `/m/:mockId/:resource/:id` | 단건 조회 |
-| POST | `/m/:mockId/:resource` | 생성 |
-| PUT | `/m/:mockId/:resource/:id` | 전체 수정 |
-| PATCH | `/m/:mockId/:resource/:id` | 부분 수정 |
-| DELETE | `/m/:mockId/:resource/:id` | 삭제 |
-| POST | `/m/:mockId/graphql` | GraphQL 쿼리/뮤테이션 |
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/m/:mockId/:resource` | List all |
+| GET | `/m/:mockId/:resource/:id` | Get single |
+| POST | `/m/:mockId/:resource` | Create |
+| PUT | `/m/:mockId/:resource/:id` | Full update |
+| PATCH | `/m/:mockId/:resource/:id` | Partial update |
+| DELETE | `/m/:mockId/:resource/:id` | Delete |
+| POST | `/m/:mockId/graphql` | GraphQL query/mutation |
 
 ## Roadmap
 
-### 진짜 API처럼 동작하게
+### Make it work like a real API
 
-- [x] **필터링** — `GET /users?age_gte=20&age_lte=30&category=laptop`
-- [x] **정렬** — `GET /users?sort=name&order=asc`
-- [x] **페이지네이션** — `GET /users?page=2&limit=10` (총 건수 헤더 포함)
-- [x] **전체 검색** — `GET /users?q=kim`
-- [x] **중첩 리소스** — `GET /users/1/posts` (유저 1의 게시글)
-- [x] **관계 확장** — `GET /posts?_expand=author&_embed=comments`
-- [x] **깊은 관계** — `?_expand=post,post.user` 다단계 dot notation (최대 3단계)
-- [x] **GraphQL 관계 타입** — FK 자동 감지, `{ users { posts { comments { user } } } }`
-- [x] **Auth 시뮬레이션** — API Key, Bearer Token 검증
+- [x] **Filtering** — `GET /users?age_gte=20&age_lte=30&category=laptop`
+- [x] **Sorting** — `GET /users?sort=name&order=asc`
+- [x] **Pagination** — `GET /users?page=2&limit=10` (includes total count header)
+- [x] **Full-text search** — `GET /users?q=kim`
+- [x] **Nested resources** — `GET /users/1/posts` (user 1's posts)
+- [x] **Relation expansion** — `GET /posts?_expand=author&_embed=comments`
+- [x] **Deep relations** — `?_expand=post,post.user` multi-level dot notation (max 3 levels)
+- [x] **GraphQL relation types** — Auto-detect FK, `{ users { posts { comments { user } } } }`
+- [x] **Auth simulation** — API Key, Bearer Token validation
 
 ### Production-grade Mock (High Priority)
 
-- [x] **ETag + 304** — 조건부 요청 (`If-None-Match` → `304 Not Modified`), React Query/SWR 캐시 테스트
-- [x] **데이터 리셋** — `POST /api/mocks/:id/reset` 시드 데이터 복원, E2E 테스트 필수
-- [x] **자동 timestamp** — POST 시 `createdAt`, PATCH 시 `updatedAt` 자동 주입
-- [x] **커서 기반 페이지네이션** — `?cursor=xxx&limit=10`, Stripe/Shopify 표준
-- [x] **Faker.js 스마트 데이터** — 필드명에서 의미 감지 (email→이메일, phone→전화번호)
-- [x] **Idempotency Key** — `Idempotency-Key` 헤더로 중복 요청 방지 (Stripe 패턴)
-- [x] **Webhook HMAC 서명** — `X-MockSnap-Signature` HMAC-SHA256 검증 헤더
-- [x] **지연 분포** — 고정 delay 외에 uniform/normal 분포 지원
+- [x] **ETag + 304** — Conditional requests (`If-None-Match` -> `304 Not Modified`), React Query/SWR cache testing
+- [x] **Data reset** — `POST /api/mocks/:id/reset` restores seed data, essential for E2E testing
+- [x] **Auto timestamp** — `createdAt` on POST, `updatedAt` on PATCH auto-injected
+- [x] **Cursor-based pagination** — `?cursor=xxx&limit=10`, Stripe/Shopify standard
+- [x] **Faker.js smart data** — Detects meaning from field names (email->email, phone->phone number)
+- [x] **Idempotency Key** — `Idempotency-Key` header prevents duplicate requests (Stripe pattern)
+- [x] **Webhook HMAC signing** — `X-MockSnap-Signature` HMAC-SHA256 verification header
+- [x] **Delay distribution** — Supports uniform/normal distribution in addition to fixed delay
 
-### 플랫폼 확장
+### Platform Expansion
 
-- [ ] Record & Replay — 프로덕션 API 프록시 녹화 → Mock 자동 생성
-- [ ] Team Workspace — 팀 워크스페이스 + Mock 버전 관리
-- [ ] Cloud Deployment — Cloudflare Workers 엣지 호스팅
-- [ ] Custom Domain — 와일드카드 서브도메인 (`abc123.mocksnap.dev`)
-- [ ] Monaco Editor — 스키마 편집기 통합
-- [ ] SDK/CLI — `npx mocksnap create "유저 API"`
-- [ ] SQL DDL 입력 — `CREATE TABLE` 문에서 Mock 자동 생성
-- [x] OpenAPI 역생성 — Mock → OpenAPI 3.x 스펙 + Scalar API Docs UI
-- [ ] SSE/Streaming — `text/event-stream` 실시간 엔드포인트
+- [ ] Record & Replay — Record production API proxy -> auto-generate Mock
+- [ ] Team Workspace — Team workspaces + Mock version control
+- [ ] Cloud Deployment — Cloudflare Workers edge hosting
+- [ ] Custom Domain — Wildcard subdomain (`abc123.mocksnap.dev`)
+- [ ] Monaco Editor — Schema editor integration
+- [ ] SDK/CLI — `npx mocksnap create "user API"`
+- [ ] SQL DDL Input — Auto-generate Mock from `CREATE TABLE` statements
+- [x] OpenAPI Reverse Generation — Mock -> OpenAPI 3.x spec + Scalar API Docs UI
+- [ ] SSE/Streaming — `text/event-stream` real-time endpoint
 
 ## Changelog
 
-### v0.9.0 (2026-03-28) — API Docs 자동 생성
+### v0.9.0 (2026-03-28) — Auto-generated API Docs
 
-- `/m/:mockId/docs` — Scalar API Reference UI 자동 생성 (Swagger UI 대체)
-- `/m/:mockId/openapi.json` — OpenAPI 3.0 스펙 자동 생성
-- 대시보드에 "Docs" 링크 추가
+- `/m/:mockId/docs` — Auto-generated Scalar API Reference UI (replaces Swagger UI)
+- `/m/:mockId/openapi.json` — Auto-generated OpenAPI 3.0 spec
+- Added "Docs" link to dashboard
 
-### v0.8.0 (2026-03-28) — 깊은 관계 쿼리
+### v0.8.0 (2026-03-28) — Deep Relation Queries
 
-- Deep expand: `?_expand=post,post.user` — 다단계 관계 확장 (최대 3단계)
-- Deep embed: `?_embed=posts,posts.comments` — 다단계 관계 임베드
-- GraphQL 관계 타입: FK 자동 감지하여 타입 간 관계 필드 생성 (`User.posts`, `Post.user`)
-- GraphQL 중첩 쿼리: `{ users { posts { comments { user { name } } } } }`
+- Deep expand: `?_expand=post,post.user` — multi-level relation expansion (max 3 levels)
+- Deep embed: `?_embed=posts,posts.comments` — multi-level relation embedding
+- GraphQL relation types: auto-detect FK to create relation fields between types (`User.posts`, `Post.user`)
+- GraphQL nested queries: `{ users { posts { comments { user { name } } } } }`
 
-### v0.7.0 (2026-03-28) — Production API 패턴
+### v0.7.0 (2026-03-28) — Production API Patterns
 
-- Auth 시뮬레이션: API Key (`X-API-Key`) / Bearer Token 검증, 401 응답
-- 커서 기반 페이지네이션: `?cursor=xxx&limit=10` → `{ data, has_more, next_cursor }` (Stripe 패턴)
-- Webhook HMAC 서명: `X-MockSnap-Signature` + `X-MockSnap-Timestamp` 헤더
-- 지연 분포: 고정(ms), uniform(min~max), normal(mean±sigma) 지원
-- Idempotency Key: `Idempotency-Key` 헤더로 중복 POST 방지 (24시간 캐싱)
-- Faker.js 스마트 데이터: AI 키 없이도 필드명 감지하여 리얼 데이터 자동 생성
+- Auth simulation: API Key (`X-API-Key`) / Bearer Token validation, 401 response
+- Cursor-based pagination: `?cursor=xxx&limit=10` -> `{ data, has_more, next_cursor }` (Stripe pattern)
+- Webhook HMAC signing: `X-MockSnap-Signature` + `X-MockSnap-Timestamp` headers
+- Delay distribution: fixed (ms), uniform (min~max), normal (mean +/- sigma) support
+- Idempotency Key: `Idempotency-Key` header prevents duplicate POSTs (24-hour caching)
+- Faker.js smart data: auto-generates realistic data by detecting field names, even without AI key
 
-### v0.6.0 (2026-03-28) — 캐시, 리셋, 타임스탬프
+### v0.6.0 (2026-03-28) — Cache, Reset, Timestamps
 
-- ETag + `304 Not Modified`: GET 응답에 ETag 해시, `If-None-Match` 매칭 시 304 반환
-- 데이터 리셋: `POST /api/mocks/:id/reset` — 시드 데이터 스냅샷으로 복원
-- 자동 timestamp: POST 시 `createdAt`/`updatedAt`, PUT/PATCH 시 `updatedAt` 자동 주입
+- ETag + `304 Not Modified`: ETag hash on GET responses, returns 304 on `If-None-Match` match
+- Data reset: `POST /api/mocks/:id/reset` — restores to seed data snapshot
+- Auto timestamp: `createdAt`/`updatedAt` on POST, `updatedAt` on PUT/PATCH auto-injected
 
-### v0.5.0 (2026-03-28) — Production-grade 응답
+### v0.5.0 (2026-03-28) — Production-grade Responses
 
-- 응답 Envelope: `{ data, meta, links }` 래핑 (리소스별 on/off)
-- RFC 7807 Problem Details 에러 포맷 (`type`, `title`, `status`, `detail`, `instance`)
-- 필드 선택: `?fields=id,name` — 지정 필드만 반환
-- `Location` 헤더: POST 201 응답에 생성된 리소스 URL
-- Rate Limit 헤더: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`
-- `Link` 헤더: RFC 8288 표준 페이지네이션 (`rel="next"`, `rel="last"` 등)
+- Response Envelope: `{ data, meta, links }` wrapping (per-resource on/off)
+- RFC 7807 Problem Details error format (`type`, `title`, `status`, `detail`, `instance`)
+- Field selection: `?fields=id,name` — return only specified fields
+- `Location` header: resource URL in POST 201 response
+- Rate Limit headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`
+- `Link` header: RFC 8288 standard pagination (`rel="next"`, `rel="last"`, etc.)
 
-### v0.4.0 (2026-03-28) — 진짜 API처럼
+### v0.4.0 (2026-03-28) — Works Like a Real API
 
-- 필터링: `?age_gte=20&age_lte=30`, `?name=Kim`, `?status_ne=deleted`, `?name_like=kim`
-- 정렬: `?sort=name&order=asc`
-- 페이지네이션: `?page=2&limit=10` + `X-Total-Count` 응답 헤더
-- 전체 검색: `?q=kim`
-- 중첩 리소스: `/users/1/posts` (FK 자동 감지)
-- 관계 확장: `?_expand=user` (FK → 원본 객체로 교체)
-- 관계 임베드: `?_embed=posts` (1:N 하위 리소스 배열 포함)
+- Filtering: `?age_gte=20&age_lte=30`, `?name=Kim`, `?status_ne=deleted`, `?name_like=kim`
+- Sorting: `?sort=name&order=asc`
+- Pagination: `?page=2&limit=10` + `X-Total-Count` response header
+- Full-text search: `?q=kim`
+- Nested resources: `/users/1/posts` (auto FK detection)
+- Relation expansion: `?_expand=user` (FK -> replaced with original object)
+- Relation embedding: `?_embed=posts` (1:N child resource array included)
 
-### v0.3.0 (2026-03-28) — 배포 준비
+### v0.3.0 (2026-03-28) — Deployment Ready
 
-- BYOK (Bring Your Own Key): 사용자가 자신의 Anthropic API 키로 AI 기능 사용
-- Rate limit: IP당 Mock 생성 10회/시간
-- Mock TTL: 7일 자동 만료 + 주기적 정리
-- Fly.io 배포 설정 (Dockerfile + fly.toml + 영속 볼륨)
-- Vercel 프론트엔드 배포 설정
+- BYOK (Bring Your Own Key): Users use their own Anthropic API key for AI features
+- Rate limit: 10 Mock creations per hour per IP
+- Mock TTL: 7-day auto-expiration + periodic cleanup
+- Fly.io deployment setup (Dockerfile + fly.toml + persistent volume)
+- Vercel frontend deployment setup
 
-### v0.2.0 (2026-03-28) — 확장 기능
+### v0.2.0 (2026-03-28) — Extended Features
 
-- GraphQL 엔드포인트 자동 생성 (같은 스키마에서 REST + GraphQL 동시)
-- MCP 서버 — Claude Code/Cursor에서 직접 Mock 생성/관리
-- Webhook 시뮬레이션 (CRUD 시 설정된 URL로 이벤트 payload 전송)
-- Request 로그 (모든 요청/응답 기록 + 대시보드 실시간 표시)
+- Auto-generated GraphQL endpoint (REST + GraphQL simultaneously from same schema)
+- MCP server — Create/manage Mocks directly from Claude Code/Cursor
+- Webhook simulation (sends event payload to configured URL on CRUD operations)
+- Request logs (records all requests/responses + real-time dashboard display)
 
 ### v0.1.0 (2026-03-28) — MVP
 
-- JSON 샘플 입력 → REST API 자동 생성 + Stateful CRUD
-- AI 자연어 입력 → 스키마 + 리얼 데이터 자동 생성 (Claude API)
-- AI 데이터 증폭 (시드 1~2건 → 10건 리얼 데이터)
-- OpenAPI 3.x 스펙 입력 (JSON/YAML)
-- 응답 커스텀 (지연, 에러율, 상태코드, 강제 상태)
-- Mock 목록 관리 페이지
+- JSON sample input -> auto-generate REST API + Stateful CRUD
+- AI natural language input -> auto-generate schema + realistic data (Claude API)
+- AI data amplification (seed 1~2 items -> 10 realistic data items)
+- OpenAPI 3.x spec input (JSON/YAML)
+- Response customization (delay, error rate, status code, forced status)
+- Mock list management page
 - Web UI (Next.js) + API Playground
 
 ## License

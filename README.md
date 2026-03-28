@@ -181,14 +181,52 @@ mocksnap/
 
 ## Roadmap
 
+### 진짜 API처럼 동작하게 (High Priority)
+
+- [ ] **필터링** — `GET /users?age_gte=20&age_lte=30&category=laptop`
+- [ ] **정렬** — `GET /users?sort=name&order=asc`
+- [ ] **페이지네이션** — `GET /users?page=2&limit=10` (총 건수 헤더 포함)
+- [ ] **전체 검색** — `GET /users?q=kim`
+- [ ] **중첩 리소스** — `GET /users/1/posts` (유저 1의 게시글)
+- [ ] **관계 확장** — `GET /posts?_expand=author&_embed=comments`
+- [ ] **Auth 시뮬레이션** — API Key, Bearer Token 검증
+
+### 플랫폼 확장
+
 - [ ] Record & Replay — 프로덕션 API 프록시 녹화 → Mock 자동 생성
 - [ ] Team Workspace — 팀 워크스페이스 + Mock 버전 관리
 - [ ] Cloud Deployment — Cloudflare Workers 엣지 호스팅
 - [ ] Custom Domain — 와일드카드 서브도메인 (`abc123.mocksnap.dev`)
 - [ ] Monaco Editor — 스키마 편집기 통합
 - [ ] SDK/CLI — `npx mocksnap create "유저 API"`
-- [ ] Rate Limiting 시뮬레이션
-- [ ] Auth 시뮬레이션 (API Key, Bearer Token)
+- [ ] SQL DDL 입력 — `CREATE TABLE` 문에서 Mock 자동 생성
+
+## Changelog
+
+### v0.3.0 (2026-03-28) — 배포 준비
+
+- BYOK (Bring Your Own Key): 사용자가 자신의 Anthropic API 키로 AI 기능 사용
+- Rate limit: IP당 Mock 생성 10회/시간
+- Mock TTL: 7일 자동 만료 + 주기적 정리
+- Fly.io 배포 설정 (Dockerfile + fly.toml + 영속 볼륨)
+- Vercel 프론트엔드 배포 설정
+
+### v0.2.0 (2026-03-28) — 확장 기능
+
+- GraphQL 엔드포인트 자동 생성 (같은 스키마에서 REST + GraphQL 동시)
+- MCP 서버 — Claude Code/Cursor에서 직접 Mock 생성/관리
+- Webhook 시뮬레이션 (CRUD 시 설정된 URL로 이벤트 payload 전송)
+- Request 로그 (모든 요청/응답 기록 + 대시보드 실시간 표시)
+
+### v0.1.0 (2026-03-28) — MVP
+
+- JSON 샘플 입력 → REST API 자동 생성 + Stateful CRUD
+- AI 자연어 입력 → 스키마 + 리얼 데이터 자동 생성 (Claude API)
+- AI 데이터 증폭 (시드 1~2건 → 10건 리얼 데이터)
+- OpenAPI 3.x 스펙 입력 (JSON/YAML)
+- 응답 커스텀 (지연, 에러율, 상태코드, 강제 상태)
+- Mock 목록 관리 페이지
+- Web UI (Next.js) + API Playground
 
 ## License
 

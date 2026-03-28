@@ -8,6 +8,7 @@ import { mocks } from './routes/mocks.js';
 import { dynamic } from './routes/dynamic.js';
 import { config } from './routes/config.js';
 import { graphql } from './routes/graphql.js';
+import { docs } from './routes/docs.js';
 import { API_PORT } from '@mocksnap/shared';
 
 // Initialize database
@@ -64,6 +65,7 @@ app.use('/api/mocks', async (c, next) => {
 // Routes
 app.route('/api/mocks', mocks);
 app.route('/api/mocks', config);
+app.route('/m', docs);
 app.route('/m', graphql);
 app.route('/m', dynamic);
 

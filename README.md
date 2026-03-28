@@ -213,10 +213,16 @@ mocksnap/
 - [ ] Monaco Editor — 스키마 편집기 통합
 - [ ] SDK/CLI — `npx mocksnap create "유저 API"`
 - [ ] SQL DDL 입력 — `CREATE TABLE` 문에서 Mock 자동 생성
-- [ ] OpenAPI 역생성 — Mock → OpenAPI 3.x 스펙 내보내기
+- [x] OpenAPI 역생성 — Mock → OpenAPI 3.x 스펙 + Scalar API Docs UI
 - [ ] SSE/Streaming — `text/event-stream` 실시간 엔드포인트
 
 ## Changelog
+
+### v0.9.0 (2026-03-28) — API Docs 자동 생성
+
+- `/m/:mockId/docs` — Scalar API Reference UI 자동 생성 (Swagger UI 대체)
+- `/m/:mockId/openapi.json` — OpenAPI 3.0 스펙 자동 생성
+- 대시보드에 "Docs" 링크 추가
 
 ### v0.8.0 (2026-03-28) — 깊은 관계 쿼리
 

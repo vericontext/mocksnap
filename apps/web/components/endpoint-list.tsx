@@ -54,6 +54,17 @@ export default function EndpointList({ mockId, resources, baseUrl, graphqlUrl }:
             </button>
           </div>
         )}
+        <div className="flex items-center gap-3">
+          <h2 className="text-lg font-semibold">Docs</h2>
+          <a
+            href={`${baseUrl}/docs`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3 py-1 bg-gray-800 rounded text-sm font-mono text-blue-400 hover:text-blue-300"
+          >
+            {baseUrl}/docs
+          </a>
+        </div>
       </div>
 
       {resources.map((resource) => (

@@ -149,6 +149,15 @@ export function updateRow(mockId: string, resourceName: string, id: string, newD
   return updated;
 }
 
+export function resetTable(mockId: string, resourceName: string, seedData: unknown[]) {
+  const name = tableName(mockId, resourceName);
+  db.exec(`DELETE FROM "${name}"`);
+  const stmt = db.prepare(`INSERT INTO "${name}" (data) VALUES (?)`);
+  for (const item of seedData) {
+    stmt.run(JSON.stringify(item));
+  }
+}
+
 export function deleteRow(mockId: string, resourceName: string, id: string): boolean {
   const name = tableName(mockId, resourceName);
   const result = db.prepare(

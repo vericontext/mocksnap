@@ -16,6 +16,7 @@ export function initializeSchema() {
       name        TEXT NOT NULL,
       schema_json TEXT NOT NULL,
       config_json TEXT DEFAULT '{}',
+      seed_data   TEXT DEFAULT '[]',
       UNIQUE(mock_id, name)
     );
 

@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import type { Context } from 'hono';
+import { createHash } from 'node:crypto';
 import { db } from '../db/connection.js';
 import { getAllRows, getRowById, insertRow, updateRow, deleteRow, queryRows } from '../db/mock-tables.js';
 import type { ResourceConfig } from '@mocksnap/shared';
@@ -31,6 +32,23 @@ function getResourceConfig(mockId: string, resource: string): ResourceConfig | n
     | { config_json: string }
     | undefined;
   return res ? JSON.parse(res.config_json || '{}') : null;
+}
+
+// --- ETag ---
+
+function generateETag(body: string): string {
+  return `"${createHash('md5').update(body).digest('hex')}"`;
+}
+
+function checkConditional(c: Context, body: string): Response | null {
+  const etag = generateETag(body);
+  c.header('ETag', etag);
+
+  const ifNoneMatch = c.req.header('If-None-Match');
+  if (ifNoneMatch && ifNoneMatch === etag) {
+    return c.body(null, 304);
+  }
+  return null;
 }
 
 // --- RFC 7807 Problem Details ---
@@ -255,7 +273,8 @@ dynamic.get('/:mockId/:resource', (c) => {
 
   logRequest(mockId, 'GET', c.req.path, 200);
 
-  // Envelope
+  // Build response body
+  let responseBody: unknown;
   if (config?.envelope) {
     const page = opts.page ?? 1;
     const limit = opts.limit ?? total;
@@ -263,7 +282,7 @@ dynamic.get('/:mockId/:resource', (c) => {
     const basePath = c.req.path;
     const buildUrl = (p: number) => `${basePath}?page=${p}&limit=${limit}`;
 
-    return c.json({
+    responseBody = {
       data: result,
       meta: { total, page, limit, totalPages },
       links: {
@@ -273,10 +292,17 @@ dynamic.get('/:mockId/:resource', (c) => {
         next: page < totalPages ? buildUrl(page + 1) : null,
         prev: page > 1 ? buildUrl(page - 1) : null,
       },
-    });
+    };
+  } else {
+    responseBody = result;
   }
 
-  return c.json(result);
+  // ETag + conditional
+  const bodyStr = JSON.stringify(responseBody);
+  const conditional = checkConditional(c, bodyStr);
+  if (conditional) return conditional;
+
+  return c.json(responseBody);
 });
 
 // --- GET Single ---
@@ -303,7 +329,13 @@ dynamic.get('/:mockId/:resource/:id', (c) => {
 
   const config = getResourceConfig(mockId, resource);
   const item = result[0];
-  return c.json(config?.envelope ? { data: item } : item);
+  const responseBody = config?.envelope ? { data: item } : item;
+
+  const bodyStr = JSON.stringify(responseBody);
+  const conditional = checkConditional(c, bodyStr);
+  if (conditional) return conditional;
+
+  return c.json(responseBody);
 });
 
 // --- GET Nested ---
@@ -343,7 +375,10 @@ dynamic.get('/:mockId/:resource/:id/:subResource', (c) => {
 dynamic.post('/:mockId/:resource', async (c) => {
   const mockId = c.req.param('mockId');
   const resource = c.req.param('resource');
-  const body = await c.req.json();
+  const body = await c.req.json() as Record<string, unknown>;
+  const now = new Date().toISOString();
+  body.createdAt ??= now;
+  body.updatedAt ??= now;
   const result = insertRow(mockId, resource, body);
 
   applyCommonHeaders(c, mockId, resource);
@@ -365,7 +400,8 @@ dynamic.post('/:mockId/:resource', async (c) => {
 dynamic.put('/:mockId/:resource/:id', async (c) => {
   const mockId = c.req.param('mockId');
   const resource = c.req.param('resource');
-  const body = await c.req.json();
+  const body = await c.req.json() as Record<string, unknown>;
+  body.updatedAt = new Date().toISOString();
   const updated = updateRow(mockId, resource, c.req.param('id'), body, false);
   if (!updated) {
     logRequest(mockId, 'PUT', c.req.path, 404, JSON.stringify(body));
@@ -386,7 +422,8 @@ dynamic.put('/:mockId/:resource/:id', async (c) => {
 dynamic.patch('/:mockId/:resource/:id', async (c) => {
   const mockId = c.req.param('mockId');
   const resource = c.req.param('resource');
-  const body = await c.req.json();
+  const body = await c.req.json() as Record<string, unknown>;
+  body.updatedAt = new Date().toISOString();
   const updated = updateRow(mockId, resource, c.req.param('id'), body, true);
   if (!updated) {
     logRequest(mockId, 'PATCH', c.req.path, 404, JSON.stringify(body));

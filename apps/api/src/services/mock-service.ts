@@ -72,10 +72,11 @@ export async function createMock(request: CreateMockRequest): Promise<MockDefini
 
   for (const resource of resources) {
     // Insert resource metadata
-    db.prepare('INSERT INTO mock_resources (mock_id, name, schema_json) VALUES (?, ?, ?)').run(
+    db.prepare('INSERT INTO mock_resources (mock_id, name, schema_json, seed_data) VALUES (?, ?, ?, ?)').run(
       mockId,
       resource.name,
-      JSON.stringify(resource.fields)
+      JSON.stringify(resource.fields),
+      JSON.stringify(resource.seedData)
     );
 
     // Create data table and seed

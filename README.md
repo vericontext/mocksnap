@@ -193,9 +193,9 @@ mocksnap/
 
 ### Production-grade Mock (High Priority)
 
-- [ ] **ETag + 304** — 조건부 요청 (`If-None-Match` → `304 Not Modified`), React Query/SWR 캐시 테스트
-- [ ] **데이터 리셋** — `POST /api/mocks/:id/reset` 시드 데이터 복원, E2E 테스트 필수
-- [ ] **자동 timestamp** — POST 시 `createdAt`, PATCH 시 `updatedAt` 자동 주입
+- [x] **ETag + 304** — 조건부 요청 (`If-None-Match` → `304 Not Modified`), React Query/SWR 캐시 테스트
+- [x] **데이터 리셋** — `POST /api/mocks/:id/reset` 시드 데이터 복원, E2E 테스트 필수
+- [x] **자동 timestamp** — POST 시 `createdAt`, PATCH 시 `updatedAt` 자동 주입
 - [ ] **커서 기반 페이지네이션** — `?cursor=xxx&limit=10`, Stripe/Shopify 표준
 - [ ] **Faker.js 스마트 데이터** — 필드명에서 의미 감지 (email→이메일, phone→전화번호)
 - [ ] **Idempotency Key** — `Idempotency-Key` 헤더로 중복 요청 방지 (Stripe 패턴)
@@ -215,6 +215,12 @@ mocksnap/
 - [ ] SSE/Streaming — `text/event-stream` 실시간 엔드포인트
 
 ## Changelog
+
+### v0.6.0 (2026-03-28) — 캐시, 리셋, 타임스탬프
+
+- ETag + `304 Not Modified`: GET 응답에 ETag 해시, `If-None-Match` 매칭 시 304 반환
+- 데이터 리셋: `POST /api/mocks/:id/reset` — 시드 데이터 스냅샷으로 복원
+- 자동 timestamp: POST 시 `createdAt`/`updatedAt`, PUT/PATCH 시 `updatedAt` 자동 주입
 
 ### v0.5.0 (2026-03-28) — Production-grade 응답
 

@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { createMock, getMock, deleteMock, listMocks } from '../services/mock-service.js';
 import { db } from '../db/connection.js';
+import { resetTable } from '../db/mock-tables.js';
 import type { CreateMockRequest } from '@mocksnap/shared';
 
 const mocks = new Hono();
@@ -42,6 +43,25 @@ mocks.get('/:mockId', (c) => {
     return c.json({ error: 'Not Found', message: 'Mock not found' }, 404);
   }
   return c.json(mock);
+});
+
+// POST /api/mocks/:mockId/reset — restore seed data
+mocks.post('/:mockId/reset', (c) => {
+  const mockId = c.req.param('mockId');
+  const resources = db.prepare('SELECT name, seed_data FROM mock_resources WHERE mock_id = ?').all(mockId) as {
+    name: string; seed_data: string;
+  }[];
+
+  if (resources.length === 0) {
+    return c.json({ error: 'Not Found', message: 'Mock not found' }, 404);
+  }
+
+  for (const r of resources) {
+    const seedData = JSON.parse(r.seed_data || '[]');
+    resetTable(mockId, r.name, seedData);
+  }
+
+  return c.json({ message: 'Mock data reset to initial state', resources: resources.length });
 });
 
 // GET /api/mocks/:mockId/logs — request logs

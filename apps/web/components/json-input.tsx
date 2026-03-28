@@ -179,7 +179,7 @@ export default function JsonInput() {
           value={apiKey}
           onChange={(e) => saveApiKey(e.target.value)}
           placeholder="sk-ant-..."
-          className="w-full mt-2 px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm font-mono focus:outline-none focus:border-blue-500"
+          className="w-full mt-2 px-4 py-2 bg-gray-100 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-sm font-mono focus:outline-none focus:border-blue-500"
         />
         <p className="text-xs text-gray-500 mt-1">Your key is stored in your browser only. Never sent to our servers — used directly with Anthropic API.</p>
       </details>

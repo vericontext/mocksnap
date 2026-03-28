@@ -111,10 +111,57 @@ export default function JsonInput() {
     }
   };
 
+  const handleTryNow = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      const mock = await createMock({
+        name: 'Blog API (Demo)',
+        sample: {
+          users: [
+            { id: 1, name: 'Kim Minjun', email: 'minjun@example.com', age: 28 },
+            { id: 2, name: 'Lee Sujin', email: 'sujin@example.com', age: 32 },
+            { id: 3, name: 'Park Jihye', email: 'jihye@example.com', age: 25 },
+          ],
+          posts: [
+            { id: 1, title: 'Getting Started with MockSnap', body: 'MockSnap lets you create mock APIs instantly.', userId: 1 },
+            { id: 2, title: 'REST vs GraphQL', body: 'MockSnap supports both REST and GraphQL.', userId: 2 },
+            { id: 3, title: 'API Design Tips', body: 'Use filtering, pagination, and relations.', userId: 1 },
+          ],
+          comments: [
+            { id: 1, body: 'This is amazing!', postId: 1, userId: 2 },
+            { id: 2, body: 'Very helpful, thanks!', postId: 1, userId: 3 },
+            { id: 3, body: 'Great comparison.', postId: 2, userId: 1 },
+          ],
+        },
+        amplify: false,
+      });
+      router.push(`/mock/${mock.id}`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Something went wrong');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const isAI = mode === 'prompt' || (mode === 'json' && amplify) || mode === 'openapi';
 
   return (
     <div className="w-full max-w-3xl mx-auto space-y-4">
+      {/* Try it now */}
+      <button
+        onClick={handleTryNow}
+        disabled={loading}
+        className="w-full py-3 bg-green-600 hover:bg-green-500 disabled:bg-gray-400 dark:disabled:bg-gray-700 text-white rounded-lg font-medium transition-colors cursor-pointer text-lg"
+      >
+        {loading ? 'Creating demo...' : 'Try it now — no setup needed'}
+      </button>
+      <div className="flex items-center gap-3">
+        <div className="flex-1 h-px bg-gray-300 dark:bg-gray-700" />
+        <span className="text-xs text-gray-400">or create your own</span>
+        <div className="flex-1 h-px bg-gray-300 dark:bg-gray-700" />
+      </div>
+
       <input
         type="text"
         value={name}

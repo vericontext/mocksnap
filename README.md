@@ -75,6 +75,10 @@ MCP 도구: `create_mock`, `list_mocks`, `get_mock`, `delete_mock`
 
 ## Quick Start
 
+### Deploy your own
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/vericontext/mocksnap&root-directory=apps/web)
+
 ### 요구사항
 
 - Node.js 20+

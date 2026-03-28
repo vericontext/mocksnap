@@ -6,6 +6,7 @@ import { fetchMock } from '@/lib/api-client';
 import EndpointList from '@/components/endpoint-list';
 import ApiPlayground from '@/components/api-playground';
 import RequestLogs from '@/components/request-logs';
+import ERDiagram from '@/components/er-diagram';
 import type { CreateMockResponse } from '@mocksnap/shared';
 
 export default function MockDashboard() {
@@ -49,6 +50,7 @@ export default function MockDashboard() {
       </div>
 
       <div className="space-y-8">
+        <ERDiagram mockId={mock.id} />
         <EndpointList mockId={mock.id} resources={mock.resources} baseUrl={mock.baseUrl} graphqlUrl={mock.graphqlUrl} />
         <ApiPlayground baseUrl={mock.baseUrl} />
         <RequestLogs mockId={mock.id} />

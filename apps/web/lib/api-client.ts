@@ -23,6 +23,11 @@ export async function fetchMock(mockId: string): Promise<CreateMockResponse> {
   return res.json();
 }
 
+export async function fetchDiagram(mockId: string): Promise<string> {
+  const res = await fetch(`${API_URL}/m/${mockId}/diagram`);
+  return res.text();
+}
+
 export async function listMocks(): Promise<MockListItem[]> {
   const res = await fetch(`${API_URL}/api/mocks`);
   return res.json();

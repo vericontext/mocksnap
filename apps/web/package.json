@@ -11,6 +11,7 @@
     "@mocksnap/shared": "workspace:*",
     "next": "^15",
     "react": "^19",
+    "mermaid": "^11",
     "react-dom": "^19"
   },
   "devDependencies": {

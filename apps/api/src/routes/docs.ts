@@ -59,4 +59,51 @@ docs.get('/:mockId/docs', (c) => {
   return c.html(html);
 });
 
+// GET /m/:mockId/diagram — Mermaid ER diagram
+docs.get('/:mockId/diagram', (c) => {
+  const mockId = c.req.param('mockId');
+  const meta = getMockMeta(mockId);
+  if (!meta) return c.text('Mock not found', 404);
+
+  const resourceNames = new Set(meta.resources.map((r) => r.name));
+
+  function singularize(s: string): string {
+    if (s.endsWith('ies')) return s.slice(0, -3) + 'y';
+    if (s.endsWith('ses') || s.endsWith('xes') || s.endsWith('zes')) return s.slice(0, -2);
+    if (s.endsWith('s') && !s.endsWith('ss')) return s.slice(0, -1);
+    return s;
+  }
+
+  // Build entities
+  const entities: string[] = [];
+  const relations: string[] = [];
+
+  for (const resource of meta.resources) {
+    const fieldLines = resource.fields.map((f) => {
+      let marker = '';
+      if (f.name === 'id') marker = ' PK';
+      else if (f.name.endsWith('Id') || f.name.endsWith('_id')) marker = ' FK';
+      return `        ${f.type} ${f.name}${marker}`;
+    });
+    entities.push(`    ${resource.name} {\n${fieldLines.join('\n')}\n    }`);
+
+    // Detect FK relations
+    for (const f of resource.fields) {
+      let targetSingular: string | null = null;
+      if (f.name.endsWith('Id')) targetSingular = f.name.slice(0, -2);
+      else if (f.name.endsWith('_id')) targetSingular = f.name.slice(0, -3);
+      if (!targetSingular) continue;
+
+      const candidates = [targetSingular + 's', targetSingular + 'es', targetSingular.replace(/y$/, 'ies')];
+      const target = candidates.find((c) => resourceNames.has(c));
+      if (target) {
+        relations.push(`    ${target} ||--o{ ${resource.name} : "has many"`);
+      }
+    }
+  }
+
+  const diagram = `erDiagram\n${entities.join('\n')}\n${relations.join('\n')}`;
+  return c.text(diagram);
+});
+
 export { docs };

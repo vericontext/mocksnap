@@ -48,7 +48,8 @@ docs.get('/:mockId/docs', (c) => {
 </head>
 <body>
   <script id="api-reference" data-url="/m/${mockId}/openapi.json" data-configuration='${JSON.stringify({
-    theme: 'kepler',
+    theme: 'default',
+    darkMode: false,
     hideDownloadButton: false,
     hideModels: false,
   })}'></script>

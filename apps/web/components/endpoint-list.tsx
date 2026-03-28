@@ -8,6 +8,7 @@ interface Props {
   mockId: string;
   resources: ResourceDefinition[];
   baseUrl: string;
+  graphqlUrl?: string;
 }
 
 const METHOD_COLORS: Record<string, string> = {
@@ -18,7 +19,7 @@ const METHOD_COLORS: Record<string, string> = {
   DELETE: 'text-red-400',
 };
 
-export default function EndpointList({ mockId, resources, baseUrl }: Props) {
+export default function EndpointList({ mockId, resources, baseUrl, graphqlUrl }: Props) {
   const [copied, setCopied] = useState('');
   const [openConfig, setOpenConfig] = useState<string | null>(null);
 
@@ -30,15 +31,29 @@ export default function EndpointList({ mockId, resources, baseUrl }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <h2 className="text-lg font-semibold">Base URL</h2>
-        <code className="px-3 py-1 bg-gray-800 rounded text-sm font-mono">{baseUrl}</code>
-        <button
-          onClick={() => copyToClipboard(baseUrl)}
-          className="px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors cursor-pointer"
-        >
-          {copied === baseUrl ? 'Copied!' : 'Copy'}
-        </button>
+      <div className="space-y-2">
+        <div className="flex items-center gap-3">
+          <h2 className="text-lg font-semibold">REST</h2>
+          <code className="px-3 py-1 bg-gray-800 rounded text-sm font-mono">{baseUrl}</code>
+          <button
+            onClick={() => copyToClipboard(baseUrl)}
+            className="px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors cursor-pointer"
+          >
+            {copied === baseUrl ? 'Copied!' : 'Copy'}
+          </button>
+        </div>
+        {graphqlUrl && (
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-semibold">GraphQL</h2>
+            <code className="px-3 py-1 bg-gray-800 rounded text-sm font-mono">{graphqlUrl}</code>
+            <button
+              onClick={() => copyToClipboard(graphqlUrl)}
+              className="px-2 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors cursor-pointer"
+            >
+              {copied === graphqlUrl ? 'Copied!' : 'Copy'}
+            </button>
+          </div>
+        )}
       </div>
 
       {resources.map((resource) => (

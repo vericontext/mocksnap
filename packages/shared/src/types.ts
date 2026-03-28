@@ -18,6 +18,7 @@ export interface MockDefinition {
   name?: string;
   resources: ResourceDefinition[];
   baseUrl: string;
+  graphqlUrl: string;
   createdAt: string;
 }
 

@@ -104,6 +104,7 @@ export async function createMock(request: CreateMockRequest): Promise<MockDefini
     name: request.name,
     resources: resourceDefs,
     baseUrl: `${API_BASE_URL}/m/${mockId}`,
+    graphqlUrl: `${API_BASE_URL}/m/${mockId}/graphql`,
     createdAt: new Date().toISOString(),
   };
 }

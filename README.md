@@ -189,7 +189,7 @@ mocksnap/
 - [x] **전체 검색** — `GET /users?q=kim`
 - [x] **중첩 리소스** — `GET /users/1/posts` (유저 1의 게시글)
 - [x] **관계 확장** — `GET /posts?_expand=author&_embed=comments`
-- [ ] **Auth 시뮬레이션** — API Key, Bearer Token 검증
+- [x] **Auth 시뮬레이션** — API Key, Bearer Token 검증
 
 ### Production-grade Mock (High Priority)
 

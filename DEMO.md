@@ -2,249 +2,231 @@
 
 ## 한 줄 소개
 
-> "백엔드 없이 프론트엔드 개발하세요. 말로 설명하면 3초 만에 진짜 API가 생깁니다."
+> "백엔드 없이 프론트엔드 개발하세요. 말 한마디면 API 문서까지 완성됩니다."
 
 ---
 
 ## Demo 1: 말로 설명하면 API가 생긴다 (30초)
 
-**가장 쉬운 방법.** JSON을 준비할 필요도 없습니다.
+**JSON 준비 필요 없음.** 말로 설명하면 됩니다.
 
-### 1. http://localhost:3000 접속
+### 1. http://localhost:3000 접속 → "Natural Language" 탭 클릭
 
-### 2. "Natural Language" 탭 클릭
-
-### 3. 원하는 API를 말로 설명
+### 2. 원하는 API를 자연어로 설명
 
 ```
-쇼핑몰 API 만들어줘. 상품, 주문, 유저. 한국어 데이터 10건씩.
+온라인 서점 API. 작가, 책, 리뷰, 유저.
+책은 작가와 연결, 리뷰는 책과 유저에 연결.
+한국어 데이터 5건씩.
 ```
 
-다른 예시들:
-```
-블로그 API — 작성자, 글, 댓글, 태그
-TODO 앱 — 프로젝트, 할일, 팀원
-음식 배달 앱 — 가게, 메뉴, 주문, 리뷰
-```
+### 3. "Generate API" 클릭 → 3초 후 완성
 
-### 4. "Generate API" 클릭 → 3초 후 완성
+AI가 생성하는 것들:
+- **API 구조** — authors, books, reviews, users 4개 리소스
+- **필드 설계** — title, price, isbn, rating, birth_year 등 의미 있는 필드
+- **관계 설정** — `books.author_id → authors`, `reviews.book_id → books`
+- **리얼 데이터** — "살인자의 기억법(김영하)", "채식주의자(한강)" 등 실제 한국 문학 데이터
 
-AI가 알아서 결정합니다:
-- 리소스 이름과 구조 (products, orders, users)
-- 필드와 타입 (id, name, price, status...)
-- 한국어 이름, 현실적 가격, 유효 이메일 등 리얼 데이터 10건
+### 4. 즉시 확인할 수 있는 것들
 
-### 5. 바로 사용 가능
-
-```bash
-curl http://localhost:3001/m/{mockId}/products
-# → 한국어 상품명, 현실적 가격이 담긴 10개 상품
-```
+| URL | 설명 |
+|-----|------|
+| `/m/{id}/docs` | API 문서 (Scalar UI) — Try it out 버튼으로 바로 테스트 |
+| `/m/{id}/books` | REST API — curl이나 fetch()로 호출 |
+| `/m/{id}/graphql` | GraphQL — 관계까지 한 쿼리로 |
+| 대시보드 | ER 다이어그램 — 관계 구조 시각화 |
 
 > Anthropic API Key 필요 — 페이지 상단 "Anthropic API Key" 펼쳐서 자신의 키 입력
 
 ---
 
-## Demo 2: JSON이 있다면 더 빠르게 (15초)
+## Demo 2: JSON 1건이면 API 키 없이도 OK (15초)
 
-이미 원하는 데이터 형태를 알고 있을 때.
+API 키가 없어도 됩니다. JSON 1건만 넣으면 Faker.js가 나머지를 채웁니다.
 
-### 1. "JSON" 탭에 붙여넣기
+### 1. "JSON" 탭에 최소한의 구조만 입력
 
 ```json
 {
-  "products": [
-    { "id": 1, "name": "맥북 프로", "price": 3490000, "category": "laptop" }
-  ],
-  "orders": [
-    { "id": 1, "productId": 1, "quantity": 1, "status": "shipped" }
+  "users": [
+    { "id": 1, "name": "", "email": "", "phone": "", "age": 0 }
   ]
 }
 ```
 
-**1건만 넣어도 됩니다.** "AI data amplification" 체크하면 AI가 10건으로 늘려줍니다. API 키가 없어도 Faker.js가 필드명을 보고 자동으로 리얼 데이터를 채웁니다.
+### 2. "Generate API" → Faker.js가 필드명을 보고 자동으로 리얼 데이터 생성
 
-### 2. "Generate API" → 즉시 REST + GraphQL 엔드포인트 생성
+```json
+[
+  { "id": 1, "name": "", "email": "", "phone": "", "age": 0 },
+  { "id": 2, "name": "Lucille Schinner", "email": "Gaston_Turner13@gmail.com", "phone": "(975) 591-4320", "age": 32 },
+  { "id": 3, "name": "Joy Haley-Bruen", "email": "Chance.Kling96@gmail.com", "phone": "(910) 702-8061", "age": 28 }
+]
+```
 
-### 3. Stateful — POST하면 GET에 반영됨
+`name` → 이름, `email` → 이메일, `phone` → 전화번호... 필드명만 보고 알아서 채웁니다.
+
+### 3. POST하면 GET에 반영 (Stateful)
 
 ```bash
-curl -X POST http://localhost:3001/m/{mockId}/products \
-  -H "Content-Type: application/json" \
-  -d '{"name": "에어팟 프로", "price": 359000}'
-# → createdAt, updatedAt 자동 추가됨
+curl -X POST .../users -H "Content-Type: application/json" \
+  -d '{"name": "새 유저", "email": "new@test.com"}'
+# → createdAt, updatedAt 자동 추가
 
-curl http://localhost:3001/m/{mockId}/products
-# → 에어팟 프로 포함, 총 11건
+curl .../users  # → 새 유저 포함
 ```
 
 ---
 
-## Demo 3: 실제 API처럼 쿼리 (30초)
+## Demo 3: API 문서 + ER 다이어그램 자동 생성 (15초)
 
-프론트엔드 코드에서 바로 쓸 수 있는 수준.
+Mock을 만들면 **즉시** 두 가지가 자동 생성됩니다.
+
+### Swagger UI (Scalar)
+
+`http://localhost:3001/m/{mockId}/docs` 접속 →
+
+- 모든 엔드포인트 목록 (GET, POST, PUT, PATCH, DELETE)
+- 쿼리 파라미터 문서 (sort, page, cursor, _expand...)
+- "Test Request" 버튼으로 브라우저에서 바로 API 호출
+- OpenAPI 스펙 다운로드 (`/openapi.json`)
+- Shell, Node.js, Python, Ruby 등 클라이언트 코드 자동 생성
+
+### ER 다이어그램
+
+대시보드 상단에 Mermaid ER 다이어그램이 자동 렌더링:
+
+```
+authors ──── has many ──── books ──── has many ──── reviews
+                                                      │
+users ──────────────── has many ─────────────────────┘
+```
+
+FK 필드(`author_id`, `book_id`, `user_id`)를 자동 감지. Light/Dark 모드에 맞게 테마 전환.
+
+---
+
+## Demo 4: 실제 API처럼 쿼리 (30초)
+
+프론트엔드 코드에서 **그대로** 쓸 수 있는 수준.
 
 ```bash
-# 필터링
-curl ".../products?category=laptop"
-curl ".../products?price_gte=500000&price_lte=2000000"
+# 필터링 — 가격 50만원 이상 노트북만
+curl ".../books?price_gte=15000&genre=소설"
 
-# 정렬
-curl ".../products?sort=price&order=desc"
+# 정렬 — 비싼 순서
+curl ".../books?sort=price&order=desc"
 
-# 페이지네이션 (offset)
-curl ".../products?page=2&limit=5"
-# → X-Total-Count: 10, Link: <...?page=3>; rel="next"
-
-# 페이지네이션 (cursor — Stripe 스타일)
-curl ".../products?limit=5"
-# → { "data": [...], "has_more": true, "next_cursor": "eyJpZCI6NX0=" }
-curl ".../products?cursor=eyJpZCI6NX0=&limit=5"
+# 페이지네이션 (Stripe 스타일 커서)
+curl ".../books?limit=3"
+# → { "data": [...], "has_more": true, "next_cursor": "eyJpZCI6M30=" }
+curl ".../books?cursor=eyJpZCI6M30=&limit=3"
 
 # 검색
-curl ".../products?q=맥북"
+curl ".../books?q=채식"
 
-# 필드 선택
-curl ".../products?fields=id,name,price"
+# 필드 선택 — 필요한 필드만
+curl ".../books?fields=id,title,price"
 
-# 중첩 리소스: 유저 1의 주문 목록
-curl ".../users/1/orders"
+# 관계 확장 — 책에 작가 정보 포함
+curl ".../books?_expand=author"
+# → { "title": "채식주의자", "author": { "name": "한강" } }
 
-# 관계 확장 (1단계): 주문에 상품 정보 포함
-curl ".../orders?_expand=product"
-# → { "id": 1, "status": "shipped", "product": { "name": "맥북 프로", ... } }
-
-# 관계 임베드 (1단계): 유저에 주문 목록 포함
-curl ".../users/1?_embed=orders"
+# 깊은 관계 — 작가 → 책들 → 리뷰들 (3단계)
+curl ".../authors/1?_embed=books,books.reviews"
 ```
 
-### 깊은 관계 (다단계)
-
-```bash
-# 리뷰 → 상품 → 카테고리 (3단계 expand)
-curl ".../reviews?_expand=product,product.category"
-# → { "body": "최고!", "product": { "name": "맥북", "category": { "name": "노트북" } } }
-
-# 유저 → 주문 → 주문상품 (3단계 embed)
-curl ".../users/1?_embed=orders,orders.orderItems"
-# → { "name": "Kim", "orders": [{ "status": "shipped", "orderItems": [{ "productId": 1, "qty": 2 }] }] }
-```
-
-> dot notation으로 관계 체인 표현. 최대 3단계. Envelope 모드 켜면 `{ data, meta, links }` 래핑.
+> Envelope 모드 켜면 `{ data, meta: { total, page }, links: { next, prev } }` 래핑. RFC 7807 에러 포맷.
 
 ---
 
-## Demo 4: 프로덕션 시나리오 테스트 (30초)
+## Demo 5: 프로덕션 시나리오 (30초)
 
-### 인증 시뮬레이션
+### 인증
 
-대시보드 Settings에서 Auth 설정:
 ```bash
-# Bearer Token 설정
+# Bearer Token 설정 → 토큰 없으면 401
 curl -X PATCH ".../config" -d '{"auth":{"type":"bearer","key":"my-secret"}}'
-
-# 토큰 없이 → 401
-curl http://localhost:3001/m/{mockId}/products
-# → {"type":"https://httpstatuses.com/401","title":"Unauthorized",...}
-
-# 토큰 있으면 → 200
-curl -H "Authorization: Bearer my-secret" http://localhost:3001/m/{mockId}/products
+curl .../books                                        # → 401 Unauthorized
+curl -H "Authorization: Bearer my-secret" .../books   # → 200
 ```
 
-### 에러 & 지연 시뮬레이션
+### 불안정한 API 시뮬레이션
 
 ```bash
-# 50% 확률로 503 에러 + 1~3초 랜덤 지연
+# 50% 확률 503 에러 + 1~3초 랜덤 지연
 curl -X PATCH ".../config" -d '{
-  "errorRate": 0.5,
-  "errorStatus": 503,
+  "errorRate": 0.5, "errorStatus": 503,
   "delay": {"type":"uniform","min":1000,"max":3000}
 }'
 ```
 
-### 중복 방지 (Idempotency Key)
+### 중복 방지 & 캐시
 
 ```bash
-# 같은 키로 2번 POST → 1건만 생성
-curl -H "Idempotency-Key: order-123" -X POST ".../orders" -d '{"item":"맥북"}'
-curl -H "Idempotency-Key: order-123" -X POST ".../orders" -d '{"item":"맥북"}'
-# → 두 번째는 캐시된 응답 반환, 중복 생성 안 됨
-```
+# Idempotency Key — 같은 키로 2번 POST → 1건만 생성
+curl -H "Idempotency-Key: order-1" -X POST .../orders -d '{"item":"맥북"}'
+curl -H "Idempotency-Key: order-1" -X POST .../orders -d '{"item":"맥북"}'
+# → 두 번째는 캐시 응답, 중복 없음
 
-### 캐시 테스트 (ETag)
-
-```bash
-# 첫 요청 → ETag 헤더 반환
-curl -v http://localhost:3001/m/{mockId}/products
-# → ETag: "a1b2c3..."
-
-# 같은 ETag로 재요청 → 304 Not Modified (빈 바디)
-curl -H 'If-None-Match: "a1b2c3..."' http://localhost:3001/m/{mockId}/products
-# → 304
+# ETag — 데이터 안 바뀌면 304 (React Query/SWR 캐시 테스트)
+curl -v .../books                                     # → ETag: "a1b2c3..."
+curl -H 'If-None-Match: "a1b2c3..."' .../books        # → 304 Not Modified
 ```
 
 ---
 
-## Demo 5: GraphQL — 관계까지 한번에 (20초)
+## Demo 6: GraphQL — 복잡한 관계도 한 쿼리로 (15초)
 
-별도 설정 없이 REST + GraphQL 동시 사용. FK를 자동 감지하여 관계 필드도 생성.
+FK를 자동 감지하여 관계 타입이 생성됩니다. 별도 설정 없이:
 
-```bash
-# 유저 → 게시글 → 댓글 → 댓글 작성자까지 한 쿼리로
-curl -X POST http://localhost:3001/m/{mockId}/graphql \
-  -H "Content-Type: application/json" \
-  -d '{"query": "{ users { id name posts { title comments { body user { name } } } } }"}'
-```
-
-```json
+```graphql
 {
-  "data": {
-    "users": [{
-      "name": "Kim",
-      "posts": [{
-        "title": "Hello",
-        "comments": [
-          { "body": "nice post", "user": { "name": "Lee" } },
-          { "body": "thanks", "user": { "name": "Kim" } }
-        ]
-      }]
-    }]
+  authors {
+    name
+    books {
+      title
+      reviews {
+        rating
+        comment
+        user { name }
+      }
+    }
   }
 }
 ```
 
-```bash
-# Mutation
-curl -X POST http://localhost:3001/m/{mockId}/graphql \
-  -H "Content-Type: application/json" \
-  -d '{"query": "mutation { createProduct(input: {name: \"아이폰\", price: 1500000}) { id name } }"}'
 ```
-
-> FK 필드(`userId`, `postId` 등)가 있으면 `User.posts`, `Post.user`, `Comment.post` 관계가 자동 생성됩니다.
+→ 김영하
+    살인자의 기억법
+      ★5 "김영하 작가의 독특한 상상력이 돋보이는 작품" — 이민수
+  한강
+    채식주의자
+      ★4 "강렬하고 충격적인 내용이지만 깊이 있는 메시지" — 박지은
+```
 
 ---
 
-## Demo 6: E2E 테스트 지원 (15초)
+## Demo 7: 데이터 리셋 + MCP (15초)
+
+### E2E 테스트 후 데이터 복원
 
 ```bash
-# 테스트 중 데이터가 오염됐을 때 → 원래 상태로 리셋
+# 테스트로 데이터가 오염된 후
 curl -X POST http://localhost:3001/api/mocks/{mockId}/reset
-# → 시드 데이터로 복원, 추가/수정/삭제 모두 되돌림
+# → 원래 시드 데이터로 즉시 복원
 ```
 
----
-
-## Demo 7: Claude Code에서 바로 생성 (15초)
-
-IDE에서 나가지 않고 Mock 생성.
+### Claude Code에서 바로 생성
 
 ```
-# Claude Code에서 한마디:
-"유저 CRUD Mock API 만들어줘"
+# IDE에서 한마디:
+"온라인 서점 Mock API 만들어줘"
 
-# → MCP create_mock 도구 자동 호출
+# → MCP가 자동으로 create_mock 호출
 # → Mock ID + 엔드포인트 반환
-# → 바로 fetch()에 URL 넣어서 개발 시작
+# → fetch()에 바로 사용
 ```
 
 ---
@@ -253,14 +235,14 @@ IDE에서 나가지 않고 Mock 생성.
 
 | 기존 방식 | MockSnap |
 |-----------|----------|
-| JSON 파일 하드코딩 | 살아있는 API (POST→GET 반영) |
-| json-server 세팅 | 붙여넣기 한 번이면 끝 |
+| JSON 파일 하드코딩 | 살아있는 API (POST→GET 반영, 자동 timestamp) |
+| json-server 세팅 | 말 한마디면 끝 ("쇼핑몰 API 만들어줘") |
 | MSW 코드 작성 | 코드 한 줄 없이 생성 |
-| Postman Mock 설정 | 자연어 "쇼핑몰 API 만들어줘" |
+| API 문서 따로 작성 | Swagger UI + ER 다이어그램 자동 생성 |
 | REST만 또는 GraphQL만 | REST + GraphQL 동시 생성 |
-| 쿼리 안 되는 Mock | 필터/정렬/페이지네이션/관계/커서 |
-| 관계 1단계만 | 다단계 관계 (user→posts→comments, 최대 3단계) |
-| 에러 테스트 불가 | 지연, 에러율, 인증, ETag, Idempotency |
+| 쿼리 안 되는 Mock | 필터/정렬/페이지네이션/커서/관계 (Stripe 수준) |
+| 에러 테스트 불가 | Auth, 지연분포, 에러율, ETag, Idempotency |
 | 테스트 후 데이터 오염 | `POST /reset` 한 줄로 복원 |
+| AI 키 필수 | 키 없어도 Faker.js가 리얼 데이터 생성 |
 
-**백엔드 완성 후:** base URL만 `mocksnap.dev/m/abc123` → `api.myapp.com`으로 바꾸면 끝.
+**프론트엔드 개발 → 백엔드 완성 후:** base URL만 `mocksnap.dev/m/abc123` → `api.myapp.com`으로 바꾸면 끝.

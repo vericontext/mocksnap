@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { fetchMock } from '@/lib/api-client';
 import EndpointList from '@/components/endpoint-list';
 import ApiPlayground from '@/components/api-playground';
+import RequestLogs from '@/components/request-logs';
 import type { CreateMockResponse } from '@mocksnap/shared';
 
 export default function MockDashboard() {
@@ -50,6 +51,7 @@ export default function MockDashboard() {
       <div className="space-y-8">
         <EndpointList mockId={mock.id} resources={mock.resources} baseUrl={mock.baseUrl} graphqlUrl={mock.graphqlUrl} />
         <ApiPlayground baseUrl={mock.baseUrl} />
+        <RequestLogs mockId={mock.id} />
       </div>
     </main>
   );

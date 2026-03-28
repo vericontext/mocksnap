@@ -94,6 +94,17 @@ export default function ResourceConfigPanel({ mockId, resource }: Props) {
         <span className="text-xs text-gray-500">Set to 0 to disable</span>
       </div>
 
+      <div className="flex items-center gap-3">
+        <label className="text-gray-400 w-24">Webhook URL</label>
+        <input
+          type="url"
+          value={config.webhookUrl || ''}
+          onChange={(e) => setConfig({ ...config, webhookUrl: e.target.value || undefined })}
+          placeholder="https://webhook.site/..."
+          className="flex-1 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+        />
+      </div>
+
       <button
         onClick={() => save(config)}
         disabled={saving}

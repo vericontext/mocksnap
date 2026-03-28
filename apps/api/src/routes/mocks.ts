@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { createMock, getMock, deleteMock, listMocks } from '../services/mock-service.js';
+import { db } from '../db/connection.js';
 import type { CreateMockRequest } from '@mocksnap/shared';
 
 const mocks = new Hono();
@@ -39,6 +40,28 @@ mocks.get('/:mockId', (c) => {
     return c.json({ error: 'Not Found', message: 'Mock not found' }, 404);
   }
   return c.json(mock);
+});
+
+// GET /api/mocks/:mockId/logs — request logs
+mocks.get('/:mockId/logs', (c) => {
+  const mockId = c.req.param('mockId');
+  const logs = db.prepare(
+    'SELECT id, mock_id, method, path, status, request_body, response_body, created_at FROM request_logs WHERE mock_id = ? ORDER BY created_at DESC LIMIT 100'
+  ).all(mockId) as {
+    id: number; mock_id: string; method: string; path: string; status: number;
+    request_body: string | null; response_body: string | null; created_at: string;
+  }[];
+
+  return c.json(logs.map((l) => ({
+    id: l.id,
+    mockId: l.mock_id,
+    method: l.method,
+    path: l.path,
+    status: l.status,
+    requestBody: l.request_body,
+    responseBody: l.response_body,
+    createdAt: l.created_at,
+  })));
 });
 
 mocks.delete('/:mockId', (c) => {

@@ -27,6 +27,18 @@ export interface ResourceConfig {
   errorRate?: number;
   errorStatus?: number;
   forceStatus?: number;
+  webhookUrl?: string;
+}
+
+export interface RequestLog {
+  id: number;
+  mockId: string;
+  method: string;
+  path: string;
+  status: number;
+  requestBody?: string;
+  responseBody?: string;
+  createdAt: string;
 }
 
 export interface CreateMockRequest {

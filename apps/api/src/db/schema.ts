@@ -17,5 +17,16 @@ export function initializeSchema() {
       config_json TEXT DEFAULT '{}',
       UNIQUE(mock_id, name)
     );
+
+    CREATE TABLE IF NOT EXISTS request_logs (
+      id             INTEGER PRIMARY KEY AUTOINCREMENT,
+      mock_id        TEXT NOT NULL REFERENCES mocks(id) ON DELETE CASCADE,
+      method         TEXT NOT NULL,
+      path           TEXT NOT NULL,
+      status         INTEGER NOT NULL,
+      request_body   TEXT,
+      response_body  TEXT,
+      created_at     TEXT DEFAULT (datetime('now'))
+    );
   `);
 }

@@ -1,4 +1,4 @@
-import type { CreateMockRequest, CreateMockResponse, MockListItem, ResourceConfig } from '@mocksnap/shared';
+import type { CreateMockRequest, CreateMockResponse, MockListItem, RequestLog, ResourceConfig } from '@mocksnap/shared';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -43,6 +43,11 @@ export async function updateResourceConfig(mockId: string, resource: string, con
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(config),
   });
+  return res.json();
+}
+
+export async function fetchLogs(mockId: string): Promise<RequestLog[]> {
+  const res = await fetch(`${API_URL}/api/mocks/${mockId}/logs`);
   return res.json();
 }
 

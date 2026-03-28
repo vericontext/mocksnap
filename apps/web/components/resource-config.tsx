@@ -33,7 +33,7 @@ export default function ResourceConfigPanel({ mockId, resource }: Props) {
           min={0}
           max={30000}
           step={100}
-          value={config.delay || 0}
+          value={typeof config.delay === 'number' ? config.delay : 0}
           onChange={(e) => setConfig({ ...config, delay: Number(e.target.value) })}
           className="w-24 px-2 py-1 bg-gray-200 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded text-sm"
         />
@@ -42,7 +42,7 @@ export default function ResourceConfigPanel({ mockId, resource }: Props) {
           min={0}
           max={5000}
           step={100}
-          value={config.delay || 0}
+          value={typeof config.delay === 'number' ? config.delay : 0}
           onChange={(e) => setConfig({ ...config, delay: Number(e.target.value) })}
           className="flex-1"
         />

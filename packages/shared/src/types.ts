@@ -21,12 +21,28 @@ export interface MockDefinition {
   createdAt: string;
 }
 
+export interface ResourceConfig {
+  delay?: number;
+  errorRate?: number;
+  errorStatus?: number;
+  forceStatus?: number;
+}
+
 export interface CreateMockRequest {
   name?: string;
   sample?: Record<string, unknown>;
   prompt?: string;
+  openapi?: string;
   amplify?: boolean;
   amplifyCount?: number;
+}
+
+export interface MockListItem {
+  id: string;
+  name?: string;
+  resourceCount: number;
+  createdAt: string;
+  baseUrl: string;
 }
 
 export interface CreateMockResponse extends MockDefinition {}

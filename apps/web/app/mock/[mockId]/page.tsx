@@ -48,7 +48,7 @@ export default function MockDashboard() {
       </div>
 
       <div className="space-y-8">
-        <EndpointList resources={mock.resources} baseUrl={mock.baseUrl} />
+        <EndpointList mockId={mock.id} resources={mock.resources} baseUrl={mock.baseUrl} />
         <ApiPlayground baseUrl={mock.baseUrl} />
       </div>
     </main>

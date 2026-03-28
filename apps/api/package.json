@@ -15,10 +15,12 @@
     "better-sqlite3": "^11",
     "dotenv": "^16",
     "hono": "^4",
+    "js-yaml": "^4",
     "nanoid": "^5"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7",
+    "@types/js-yaml": "^4",
     "tsx": "^4",
     "typescript": "^5"
   }

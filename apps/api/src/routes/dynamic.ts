@@ -1,11 +1,16 @@
 import { Hono } from 'hono';
 import { db } from '../db/connection.js';
 import { getAllRows, getRowById, insertRow, updateRow, deleteRow } from '../db/mock-tables.js';
+import type { ResourceConfig } from '@mocksnap/shared';
 
 const dynamic = new Hono();
 
-// Middleware: validate mock and resource exist
-dynamic.use('/:mockId/:resource/*', async (c, next) => {
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Middleware: validate mock/resource + apply response config (delay, errors)
+async function validateAndApplyConfig(c: Parameters<Parameters<typeof dynamic.use>[1]>[0], next: () => Promise<void>) {
   const mockId = c.req.param('mockId');
   const resource = c.req.param('resource');
 
@@ -14,30 +19,36 @@ dynamic.use('/:mockId/:resource/*', async (c, next) => {
     return c.json({ error: 'Not Found', message: 'Mock not found' }, 404);
   }
 
-  const res = db.prepare('SELECT name FROM mock_resources WHERE mock_id = ? AND name = ?').get(mockId, resource);
+  const res = db.prepare('SELECT name, config_json FROM mock_resources WHERE mock_id = ? AND name = ?').get(mockId, resource) as
+    | { name: string; config_json: string }
+    | undefined;
   if (!res) {
     return c.json({ error: 'Not Found', message: `Resource "${resource}" not found in this mock` }, 404);
   }
 
-  await next();
-});
+  const config: ResourceConfig = JSON.parse(res.config_json || '{}');
 
-dynamic.use('/:mockId/:resource', async (c, next) => {
-  const mockId = c.req.param('mockId');
-  const resource = c.req.param('resource');
-
-  const mock = db.prepare('SELECT id FROM mocks WHERE id = ?').get(mockId);
-  if (!mock) {
-    return c.json({ error: 'Not Found', message: 'Mock not found' }, 404);
+  // Apply delay
+  if (config.delay && config.delay > 0) {
+    await sleep(config.delay);
   }
 
-  const res = db.prepare('SELECT name FROM mock_resources WHERE mock_id = ? AND name = ?').get(mockId, resource);
-  if (!res) {
-    return c.json({ error: 'Not Found', message: `Resource "${resource}" not found in this mock` }, 404);
+  // Apply forced status code
+  if (config.forceStatus) {
+    return c.json({ error: 'Simulated Error', message: `Forced status ${config.forceStatus}` }, config.forceStatus as 400);
+  }
+
+  // Apply random error rate
+  if (config.errorRate && config.errorRate > 0 && Math.random() < config.errorRate) {
+    const status = config.errorStatus || 500;
+    return c.json({ error: 'Simulated Error', message: `Random error (${Math.round(config.errorRate * 100)}% rate)` }, status as 500);
   }
 
   await next();
-});
+}
+
+dynamic.use('/:mockId/:resource/*', validateAndApplyConfig);
+dynamic.use('/:mockId/:resource', validateAndApplyConfig);
 
 // GET /m/:mockId/:resource — list all
 dynamic.get('/:mockId/:resource', (c) => {

@@ -1,14 +1,19 @@
 import { Hono } from 'hono';
-import { createMock, getMock, deleteMock } from '../services/mock-service.js';
+import { createMock, getMock, deleteMock, listMocks } from '../services/mock-service.js';
 import type { CreateMockRequest } from '@mocksnap/shared';
 
 const mocks = new Hono();
 
+// GET /api/mocks — list all mocks
+mocks.get('/', (c) => {
+  return c.json(listMocks());
+});
+
 mocks.post('/', async (c) => {
   const body = await c.req.json<CreateMockRequest>();
 
-  if (!body.sample && !body.prompt) {
-    return c.json({ error: 'Bad Request', message: 'Either "sample" or "prompt" is required' }, 400);
+  if (!body.sample && !body.prompt && !body.openapi) {
+    return c.json({ error: 'Bad Request', message: 'Either "sample", "prompt", or "openapi" is required' }, 400);
   }
 
   if (body.sample && typeof body.sample !== 'object') {

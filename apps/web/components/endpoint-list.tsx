@@ -2,8 +2,10 @@
 
 import { useState } from 'react';
 import type { ResourceDefinition } from '@mocksnap/shared';
+import ResourceConfigPanel from './resource-config';
 
 interface Props {
+  mockId: string;
   resources: ResourceDefinition[];
   baseUrl: string;
 }
@@ -16,8 +18,9 @@ const METHOD_COLORS: Record<string, string> = {
   DELETE: 'text-red-400',
 };
 
-export default function EndpointList({ resources, baseUrl }: Props) {
+export default function EndpointList({ mockId, resources, baseUrl }: Props) {
   const [copied, setCopied] = useState('');
+  const [openConfig, setOpenConfig] = useState<string | null>(null);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -40,12 +43,27 @@ export default function EndpointList({ resources, baseUrl }: Props) {
 
       {resources.map((resource) => (
         <div key={resource.name} className="border border-gray-700 rounded-lg overflow-hidden">
-          <div className="px-4 py-2 bg-gray-800 border-b border-gray-700">
-            <h3 className="font-medium">/{resource.name}</h3>
-            <p className="text-xs text-gray-400 mt-1">
-              Fields: {resource.fields.map((f) => `${f.name} (${f.type})`).join(', ')}
-            </p>
+          <div className="px-4 py-2 bg-gray-800 border-b border-gray-700 flex items-center justify-between">
+            <div>
+              <h3 className="font-medium">/{resource.name}</h3>
+              <p className="text-xs text-gray-400 mt-1">
+                Fields: {resource.fields.map((f) => `${f.name} (${f.type})`).join(', ')}
+              </p>
+            </div>
+            <button
+              onClick={() => setOpenConfig(openConfig === resource.name ? null : resource.name)}
+              className="px-3 py-1 text-xs bg-gray-700 hover:bg-gray-600 rounded transition-colors cursor-pointer"
+            >
+              {openConfig === resource.name ? 'Hide Settings' : 'Settings'}
+            </button>
           </div>
+
+          {openConfig === resource.name && (
+            <div className="p-3 border-b border-gray-700">
+              <ResourceConfigPanel mockId={mockId} resource={resource.name} />
+            </div>
+          )}
+
           <div className="divide-y divide-gray-800">
             {Object.entries(resource.endpoints).map(([key, endpoint]) => {
               const [method, ...pathParts] = endpoint.trim().split(/\s+/);

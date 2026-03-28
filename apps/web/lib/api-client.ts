@@ -1,4 +1,4 @@
-import type { CreateMockRequest, CreateMockResponse } from '@mocksnap/shared';
+import type { CreateMockRequest, CreateMockResponse, MockListItem, ResourceConfig } from '@mocksnap/shared';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -20,6 +20,29 @@ export async function fetchMock(mockId: string): Promise<CreateMockResponse> {
   if (!res.ok) {
     throw new Error('Mock not found');
   }
+  return res.json();
+}
+
+export async function listMocks(): Promise<MockListItem[]> {
+  const res = await fetch(`${API_URL}/api/mocks`);
+  return res.json();
+}
+
+export async function deleteMockApi(mockId: string): Promise<void> {
+  await fetch(`${API_URL}/api/mocks/${mockId}`, { method: 'DELETE' });
+}
+
+export async function getResourceConfig(mockId: string, resource: string): Promise<ResourceConfig> {
+  const res = await fetch(`${API_URL}/api/mocks/${mockId}/resources/${resource}/config`);
+  return res.json();
+}
+
+export async function updateResourceConfig(mockId: string, resource: string, config: Partial<ResourceConfig>): Promise<ResourceConfig> {
+  const res = await fetch(`${API_URL}/api/mocks/${mockId}/resources/${resource}/config`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(config),
+  });
   return res.json();
 }
 

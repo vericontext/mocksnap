@@ -14,6 +14,7 @@ export function initializeSchema() {
       mock_id     TEXT NOT NULL REFERENCES mocks(id) ON DELETE CASCADE,
       name        TEXT NOT NULL,
       schema_json TEXT NOT NULL,
+      config_json TEXT DEFAULT '{}',
       UNIQUE(mock_id, name)
     );
   `);

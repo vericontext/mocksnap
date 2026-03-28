@@ -6,6 +6,9 @@ export default function Home() {
       <div className="text-center mb-10">
         <h1 className="text-4xl font-bold tracking-tight mb-3">MockSnap</h1>
         <p className="text-gray-400 text-lg">Paste JSON, get a live REST API instantly</p>
+        <a href="/mocks" className="text-sm text-blue-400 hover:underline mt-2 inline-block">
+          View my mock APIs
+        </a>
       </div>
       <JsonInput />
     </main>

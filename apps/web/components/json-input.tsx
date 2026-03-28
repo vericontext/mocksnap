@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createMock } from '@/lib/api-client';
 
-type InputMode = 'json' | 'prompt';
+type InputMode = 'json' | 'prompt' | 'openapi';
 
 const JSON_PLACEHOLDER = `{
   "users": [
@@ -23,10 +23,38 @@ Examples:
 - "Blog API with authors, posts, comments, and tags"
 - "Task management API with projects, tasks, and team members"`;
 
+const OPENAPI_PLACEHOLDER = `{
+  "openapi": "3.0.0",
+  "info": { "title": "Petstore", "version": "1.0.0" },
+  "paths": {
+    "/pets": { "get": { "summary": "List pets" } },
+    "/pets/{id}": { "get": { "summary": "Get pet" } }
+  },
+  "components": {
+    "schemas": {
+      "Pet": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "status": { "type": "string" }
+        }
+      }
+    }
+  }
+}`;
+
+const TABS: { key: InputMode; label: string }[] = [
+  { key: 'json', label: 'JSON' },
+  { key: 'prompt', label: 'Natural Language' },
+  { key: 'openapi', label: 'OpenAPI Spec' },
+];
+
 export default function JsonInput() {
   const [mode, setMode] = useState<InputMode>('json');
   const [json, setJson] = useState('');
   const [prompt, setPrompt] = useState('');
+  const [openapi, setOpenapi] = useState('');
   const [name, setName] = useState('');
   const [amplify, setAmplify] = useState(true);
   const [error, setError] = useState('');
@@ -35,44 +63,48 @@ export default function JsonInput() {
 
   const handleSubmit = async () => {
     setError('');
+    setLoading(true);
 
-    if (mode === 'json') {
-      const input = json.trim() || JSON_PLACEHOLDER;
-      let parsed: unknown;
-      try {
-        parsed = JSON.parse(input);
-      } catch {
-        setError('Invalid JSON. Please check the syntax.');
-        return;
-      }
-
-      setLoading(true);
-      try {
+    try {
+      if (mode === 'json') {
+        const input = json.trim() || JSON_PLACEHOLDER;
+        let parsed: unknown;
+        try {
+          parsed = JSON.parse(input);
+        } catch {
+          setError('Invalid JSON. Please check the syntax.');
+          setLoading(false);
+          return;
+        }
         const mock = await createMock({ name: name || undefined, sample: parsed as Record<string, unknown>, amplify });
         router.push(`/mock/${mock.id}`);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'Something went wrong');
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      const input = prompt.trim();
-      if (!input) {
-        setError('Please describe the API you want to create.');
-        return;
-      }
-
-      setLoading(true);
-      try {
+      } else if (mode === 'prompt') {
+        const input = prompt.trim();
+        if (!input) {
+          setError('Please describe the API you want to create.');
+          setLoading(false);
+          return;
+        }
         const mock = await createMock({ name: name || undefined, prompt: input });
         router.push(`/mock/${mock.id}`);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'Something went wrong');
-      } finally {
-        setLoading(false);
+      } else {
+        const input = openapi.trim();
+        if (!input) {
+          setError('Please paste an OpenAPI spec.');
+          setLoading(false);
+          return;
+        }
+        const mock = await createMock({ name: name || undefined, openapi: input });
+        router.push(`/mock/${mock.id}`);
       }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Something went wrong');
+    } finally {
+      setLoading(false);
     }
   };
+
+  const isAI = mode === 'prompt' || (mode === 'json' && amplify) || mode === 'openapi';
 
   return (
     <div className="w-full max-w-3xl mx-auto space-y-4">
@@ -86,25 +118,20 @@ export default function JsonInput() {
 
       {/* Tab switcher */}
       <div className="flex border border-gray-700 rounded-lg overflow-hidden">
-        <button
-          onClick={() => { setMode('json'); setError(''); }}
-          className={`flex-1 px-4 py-2 text-sm font-medium transition-colors cursor-pointer ${
-            mode === 'json' ? 'bg-blue-600 text-white' : 'bg-gray-900 text-gray-400 hover:text-gray-200'
-          }`}
-        >
-          JSON Input
-        </button>
-        <button
-          onClick={() => { setMode('prompt'); setError(''); }}
-          className={`flex-1 px-4 py-2 text-sm font-medium transition-colors cursor-pointer ${
-            mode === 'prompt' ? 'bg-blue-600 text-white' : 'bg-gray-900 text-gray-400 hover:text-gray-200'
-          }`}
-        >
-          Natural Language (AI)
-        </button>
+        {TABS.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => { setMode(tab.key); setError(''); }}
+            className={`flex-1 px-4 py-2 text-sm font-medium transition-colors cursor-pointer ${
+              mode === tab.key ? 'bg-blue-600 text-white' : 'bg-gray-900 text-gray-400 hover:text-gray-200'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      {mode === 'json' ? (
+      {mode === 'json' && (
         <>
           <textarea
             value={json}
@@ -123,7 +150,9 @@ export default function JsonInput() {
             AI data amplification (expand seed data to ~10 realistic items per resource)
           </label>
         </>
-      ) : (
+      )}
+
+      {mode === 'prompt' && (
         <>
           <textarea
             value={prompt}
@@ -138,6 +167,21 @@ export default function JsonInput() {
         </>
       )}
 
+      {mode === 'openapi' && (
+        <>
+          <textarea
+            value={openapi}
+            onChange={(e) => { setOpenapi(e.target.value); setError(''); }}
+            placeholder={OPENAPI_PLACEHOLDER}
+            rows={16}
+            className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg font-mono text-sm focus:outline-none focus:border-blue-500 resize-y"
+          />
+          <p className="text-xs text-gray-500">
+            Paste an OpenAPI 3.x spec (JSON or YAML). AI will generate realistic data matching the schema.
+          </p>
+        </>
+      )}
+
       {error && <p className="text-red-400 text-sm">{error}</p>}
       <button
         onClick={handleSubmit}
@@ -145,9 +189,7 @@ export default function JsonInput() {
         className="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 disabled:text-gray-400 rounded-lg font-medium transition-colors cursor-pointer"
       >
         {loading
-          ? mode === 'prompt' || amplify
-            ? 'AI is generating data...'
-            : 'Generating...'
+          ? isAI ? 'AI is generating data...' : 'Generating...'
           : 'Generate API'}
       </button>
     </div>

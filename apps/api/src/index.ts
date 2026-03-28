@@ -5,6 +5,7 @@ import { cors } from 'hono/cors';
 import { initializeSchema } from './db/schema.js';
 import { mocks } from './routes/mocks.js';
 import { dynamic } from './routes/dynamic.js';
+import { config } from './routes/config.js';
 import { API_PORT } from '@mocksnap/shared';
 
 // Initialize database
@@ -17,6 +18,7 @@ app.use('*', cors());
 
 // Routes
 app.route('/api/mocks', mocks);
+app.route('/api/mocks', config);
 app.route('/m', dynamic);
 
 // Health check

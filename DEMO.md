@@ -208,7 +208,38 @@ FK is auto-detected to create relation types. No configuration needed:
 
 ---
 
-## Demo 7: Data Reset + MCP (15 seconds)
+## Demo 7: Iterate on Your API with Chat (20 seconds)
+
+Created a mock but need to change it? Just tell it what to modify — no need to start over.
+
+### On the dashboard, use the "Modify API" chat panel:
+
+```
+You: "Add a tags resource linked to posts, and add a publishedAt date field to posts"
+```
+
+MockSnap AI applies the changes:
+- Created `tags` resource with id, name fields
+- Added `postId` FK linking tags to posts
+- Added `publishedAt` field to posts
+- Regenerated sample data for all modified resources
+
+**Everything updates instantly** — ER diagram, endpoints, API docs, GraphQL schema.
+
+### More examples:
+
+```
+"Add an avatar URL field to users"
+"Create an orders resource with userId, productId, quantity, and status"
+"Remove the comments resource"
+"Add a price field to products and make it a number"
+```
+
+> Requires Anthropic API key. Each modification re-generates data to match the new schema.
+
+---
+
+## Demo 8: Data Reset + MCP (15 seconds)
 
 ### Restore Data After E2E Tests
 
@@ -238,6 +269,7 @@ curl -X POST http://localhost:3001/api/mocks/{mockId}/reset
 | Hardcoded JSON files | Live API (POST->GET reflected, auto timestamps) |
 | json-server setup | Done in one sentence ("Create a shop API") |
 | Writing MSW code | Generated without writing a single line of code |
+| Recreate mock to change schema | Chat: "Add ratings to books" — instant update |
 | Writing API docs separately | Auto-generated Swagger UI + ER diagram |
 | REST only or GraphQL only | REST + GraphQL generated simultaneously |
 | Mock without queries | Filter/sort/paginate/cursor/relations (Stripe-level) |

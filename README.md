@@ -14,6 +14,18 @@ MockSnap is an AI-powered Mock API generator for frontend-backend decoupling. Pr
 - **Natural Language** — `"User CRUD API + order list with realistic data"` -> AI generates schema + data
 - **OpenAPI Spec** — OpenAPI 3.x JSON/YAML -> realistic data generation based on schema
 
+### Iterative Modification via Chat
+
+Refine your API without starting over. On the dashboard, describe what to change:
+
+```
+"Add a reviews resource linked to products"
+"Add an email field to users"
+"Remove the tags resource"
+```
+
+ER diagram, endpoints, API docs, and GraphQL schema update instantly.
+
 ### REST + GraphQL Generated Simultaneously
 
 Both endpoints are auto-generated from the same schema.
@@ -223,6 +235,13 @@ mocksnap/
 - [ ] SSE/Streaming — `text/event-stream` real-time endpoint
 
 ## Changelog
+
+### v1.1.0 (2026-03-28) — Iterative Chat Modification
+
+- **Modify API via chat:** describe changes in natural language on the dashboard
+- Add/remove resources, add/rename fields, regenerate data — all via chat
+- ER diagram, endpoints, API docs, and GraphQL schema auto-refresh after modification
+- `POST /api/mocks/:mockId/chat` endpoint
 
 ### v1.0.0 (2026-03-28) — Public Launch
 

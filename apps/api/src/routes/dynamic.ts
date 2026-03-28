@@ -173,15 +173,42 @@ function findForeignKeyField(mockId: string, childResource: string, parentResour
   return null;
 }
 
-function expandRelations(mockId: string, rows: unknown[], expandFields: string[]): unknown[] {
+const MAX_RELATION_DEPTH = 3;
+
+function parseNestedFields(fields: string[]): Map<string, string[]> {
+  // ["user", "user.posts", "user.posts.comments"] →
+  // Map { "user" => ["posts", "posts.comments"] }
+  const topLevel = new Map<string, string[]>();
+  for (const field of fields) {
+    const dotIdx = field.indexOf('.');
+    if (dotIdx === -1) {
+      if (!topLevel.has(field)) topLevel.set(field, []);
+    } else {
+      const top = field.slice(0, dotIdx);
+      const rest = field.slice(dotIdx + 1);
+      if (!topLevel.has(top)) topLevel.set(top, []);
+      topLevel.get(top)!.push(rest);
+    }
+  }
+  return topLevel;
+}
+
+function expandRelations(mockId: string, rows: unknown[], expandFields: string[], depth: number = 0): unknown[] {
+  if (depth >= MAX_RELATION_DEPTH) return rows;
   const resources = getResourceNames(mockId);
+  const nested = parseNestedFields(expandFields);
+
   return rows.map((row) => {
     const obj = { ...(row as Record<string, unknown>) };
-    for (const field of expandFields) {
+    for (const [field, subFields] of nested) {
       const fkValue = obj[`${field}Id`] ?? obj[`${field}_id`];
       const targetResource = field.endsWith('s') ? field : field + 's';
       if (fkValue !== undefined && resources.includes(targetResource)) {
-        const related = getRowById(mockId, targetResource, String(fkValue));
+        let related = getRowById(mockId, targetResource, String(fkValue));
+        if (related && subFields.length > 0) {
+          [related] = expandRelations(mockId, [related], subFields, depth + 1);
+          [related] = embedRelations(mockId, [related], targetResource, subFields, depth + 1);
+        }
         if (related) obj[field] = related;
       }
     }
@@ -189,19 +216,27 @@ function expandRelations(mockId: string, rows: unknown[], expandFields: string[]
   });
 }
 
-function embedRelations(mockId: string, rows: unknown[], resourceName: string, embedFields: string[]): unknown[] {
+function embedRelations(mockId: string, rows: unknown[], resourceName: string, embedFields: string[], depth: number = 0): unknown[] {
+  if (depth >= MAX_RELATION_DEPTH) return rows;
   const resources = getResourceNames(mockId);
+  const nested = parseNestedFields(embedFields);
+
   return rows.map((row) => {
     const obj = { ...(row as Record<string, unknown>) };
     const id = obj.id;
-    for (const embedResource of embedFields) {
+    for (const [embedResource, subFields] of nested) {
       if (!resources.includes(embedResource)) continue;
       const fkField = findForeignKeyField(mockId, embedResource, resourceName);
       if (!fkField || id === undefined) continue;
       const allChildren = getAllRows(mockId, embedResource);
-      obj[embedResource] = allChildren.filter((child) =>
+      let matched = allChildren.filter((child) =>
         String((child as Record<string, unknown>)[fkField]) === String(id)
       );
+      if (subFields.length > 0) {
+        matched = embedRelations(mockId, matched, embedResource, subFields, depth + 1);
+        matched = expandRelations(mockId, matched, subFields, depth + 1);
+      }
+      obj[embedResource] = matched;
     }
     return obj;
   });

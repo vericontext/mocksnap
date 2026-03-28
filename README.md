@@ -216,6 +216,13 @@ mocksnap/
 
 ## Changelog
 
+### v0.8.0 (2026-03-28) — 깊은 관계 쿼리
+
+- Deep expand: `?_expand=post,post.user` — 다단계 관계 확장 (최대 3단계)
+- Deep embed: `?_embed=posts,posts.comments` — 다단계 관계 임베드
+- GraphQL 관계 타입: FK 자동 감지하여 타입 간 관계 필드 생성 (`User.posts`, `Post.user`)
+- GraphQL 중첩 쿼리: `{ users { posts { comments { user { name } } } } }`
+
 ### v0.7.0 (2026-03-28) — Production API 패턴
 
 - Auth 시뮬레이션: API Key (`X-API-Key`) / Bearer Token 검증, 401 응답

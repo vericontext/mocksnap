@@ -13,7 +13,7 @@ export default function Home() {
             My mock APIs
           </a>
           <span className="text-gray-300 dark:text-gray-600">|</span>
-          <a href="https://github.com/vericontext/mocksnap" target="_blank" rel="noopener noreferrer" className="text-sm text-gray-500 dark:text-gray-400 hover:underline">
+          <a href="https://github.com/vericontext/mocksnap" target="_blank" rel="noopener noreferrer" className="text-sm text-blue-500 dark:text-blue-400 hover:underline">
             GitHub
           </a>
         </div>

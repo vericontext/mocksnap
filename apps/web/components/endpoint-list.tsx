@@ -37,7 +37,7 @@ export default function EndpointList({ mockId, resources, baseUrl, graphqlUrl }:
           <code className="px-3 py-1 bg-gray-200 dark:bg-gray-800 rounded text-sm font-mono">{baseUrl}</code>
           <button
             onClick={() => copyToClipboard(baseUrl)}
-            className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded transition-colors cursor-pointer"
+            className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600 rounded transition-colors cursor-pointer"
           >
             {copied === baseUrl ? 'Copied!' : 'Copy'}
           </button>
@@ -48,7 +48,7 @@ export default function EndpointList({ mockId, resources, baseUrl, graphqlUrl }:
             <code className="px-3 py-1 bg-gray-200 dark:bg-gray-800 rounded text-sm font-mono">{graphqlUrl}</code>
             <button
               onClick={() => copyToClipboard(graphqlUrl)}
-              className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded transition-colors cursor-pointer"
+              className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600 rounded transition-colors cursor-pointer"
             >
               {copied === graphqlUrl ? 'Copied!' : 'Copy'}
             </button>
@@ -78,7 +78,7 @@ export default function EndpointList({ mockId, resources, baseUrl, graphqlUrl }:
             </div>
             <button
               onClick={() => setOpenConfig(openConfig === resource.name ? null : resource.name)}
-              className="px-3 py-1 text-xs bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded transition-colors cursor-pointer"
+              className="px-3 py-1 text-xs bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600 rounded transition-colors cursor-pointer"
             >
               {openConfig === resource.name ? 'Hide Settings' : 'Settings'}
             </button>

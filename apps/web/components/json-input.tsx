@@ -170,8 +170,8 @@ export default function JsonInput() {
         className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:border-blue-500"
       />
 
-      <details className="text-sm">
-        <summary className="text-gray-500 dark:text-gray-400 cursor-pointer hover:text-gray-800 dark:hover:text-gray-200">
+      <details className="text-sm text-gray-400">
+        <summary className="text-gray-400 dark:text-gray-500 cursor-pointer hover:text-gray-600 dark:hover:text-gray-300">
           Anthropic API Key {apiKey ? '(saved)' : '(required for AI features)'}
         </summary>
         <input
@@ -254,7 +254,7 @@ export default function JsonInput() {
       <button
         onClick={handleSubmit}
         disabled={loading}
-        className="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:text-gray-400 rounded-lg font-medium transition-colors cursor-pointer"
+        className="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-300 dark:disabled:bg-gray-700 text-white disabled:text-gray-400 rounded-lg font-medium transition-colors cursor-pointer"
       >
         {loading
           ? isAI ? 'AI is generating data...' : 'Generating...'

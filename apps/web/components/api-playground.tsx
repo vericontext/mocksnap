@@ -65,7 +65,7 @@ export default function ApiPlayground({ baseUrl }: Props) {
           <button
             onClick={handleSend}
             disabled={loading}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-300 dark:disabled:bg-gray-700 rounded-lg text-sm font-medium transition-colors cursor-pointer"
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-300 dark:disabled:bg-gray-700 text-white rounded-lg text-sm font-medium transition-colors cursor-pointer"
           >
             {loading ? '...' : 'Send'}
           </button>

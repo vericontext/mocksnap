@@ -11,23 +11,37 @@ export default function ERDiagram({ mockId }: Props) {
   const [mermaidText, setMermaidText] = useState('');
   const [open, setOpen] = useState(true);
   const [svg, setSvg] = useState('');
+  const [theme, setTheme] = useState('dark');
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchDiagram(mockId).then(setMermaidText);
   }, [mockId]);
 
+  // Watch for theme changes
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      const isDark = document.documentElement.classList.contains('dark');
+      setTheme(isDark ? 'dark' : 'light');
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
+
   useEffect(() => {
     if (!mermaidText || !open) return;
 
+    const isDark = document.documentElement.classList.contains('dark');
+
     import('mermaid').then((mod) => {
       const mermaid = mod.default;
-      mermaid.initialize({ startOnLoad: false, theme: 'dark' });
-      mermaid.render('er-diagram', mermaidText).then(({ svg: rendered }) => {
+      mermaid.initialize({ startOnLoad: false, theme: isDark ? 'dark' : 'default' });
+      const id = `er-diagram-${Date.now()}`;
+      mermaid.render(id, mermaidText).then(({ svg: rendered }) => {
         setSvg(rendered);
       });
     });
-  }, [mermaidText, open]);
+  }, [mermaidText, open, theme]);
 
   if (!mermaidText) return null;
 

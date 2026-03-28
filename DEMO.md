@@ -55,7 +55,54 @@ Playground에서 다시 GET → **3개** 반환됨. "POST한 데이터가 GET에
 
 ---
 
-## Demo 2: 자연어로 API 생성 (30초)
+## Demo 2: 진짜 API처럼 쿼리 (30초)
+
+**시나리오:** 프론트엔드에서 필터, 정렬, 페이지네이션이 필요하다.
+
+### Demo 1에서 만든 Mock으로 바로 이어서:
+
+```bash
+# 카테고리 필터링
+curl "http://localhost:3001/m/{mockId}/products?category=laptop"
+# → 맥북 프로만 반환
+
+# 가격 범위 필터
+curl "http://localhost:3001/m/{mockId}/products?price_gte=500000"
+# → 50만원 이상 상품만
+
+# 정렬
+curl "http://localhost:3001/m/{mockId}/products?sort=price&order=desc"
+# → 비싼 순서대로
+
+# 페이지네이션
+curl -v "http://localhost:3001/m/{mockId}/products?page=1&limit=2"
+# → 2건 반환 + 응답 헤더에 X-Total-Count: 3
+
+# 검색
+curl "http://localhost:3001/m/{mockId}/products?q=에어"
+# → "에어"가 포함된 상품만
+```
+
+### 관계 데이터 쿼리
+
+```bash
+# 중첩 리소스: 상품 1번의 주문 목록
+curl "http://localhost:3001/m/{mockId}/products/1/orders"
+
+# 관계 확장: 주문에 상품 정보 포함
+curl "http://localhost:3001/m/{mockId}/orders?_expand=product"
+# → { "id": 1, "status": "shipped", "product": { "name": "맥북 프로 16인치", ... } }
+
+# 관계 임베드: 상품에 주문 목록 포함
+curl "http://localhost:3001/m/{mockId}/products/1?_embed=orders"
+# → { "name": "맥북 프로 16인치", ..., "orders": [{ "id": 1, ... }] }
+```
+
+> "json-server 수준의 쿼리가 설정 없이 동작합니다."
+
+---
+
+## Demo 3: 자연어로 API 생성 (30초)
 
 **시나리오:** API 구조도 모르겠고, 그냥 말로 설명하고 싶다.
 
@@ -82,7 +129,7 @@ curl http://localhost:3001/m/{mockId}/posts
 
 ---
 
-## Demo 3: GraphQL도 동시에 (15초)
+## Demo 4: GraphQL도 동시에 (15초)
 
 **시나리오:** 같은 데이터를 GraphQL로도 쓰고 싶다.
 
@@ -113,7 +160,7 @@ curl -X POST http://localhost:3001/m/{mockId}/graphql \
 
 ---
 
-## Demo 4: 에러 시뮬레이션 (15초)
+## Demo 5: 에러 시뮬레이션 (15초)
 
 **시나리오:** 프론트엔드에서 에러 핸들링을 테스트하고 싶다.
 
@@ -133,7 +180,7 @@ curl -X POST http://localhost:3001/m/{mockId}/graphql \
 
 ---
 
-## Demo 5: Claude Code에서 바로 생성 (15초)
+## Demo 6: Claude Code에서 바로 생성 (15초)
 
 **시나리오:** IDE에서 코딩하다가 Mock이 필요하다.
 
@@ -157,5 +204,6 @@ curl -X POST http://localhost:3001/m/{mockId}/graphql \
 | MSW 코드 작성 | 코드 한 줄 없이 API 생성 |
 | Postman Mock 설정 | 자연어로 "유저 API 만들어줘" |
 | REST만 또는 GraphQL만 | REST + GraphQL 동시 생성 |
+| 쿼리 안 되는 단순 Mock | 필터/정렬/페이지네이션/관계 쿼리 지원 |
 
 **백엔드 완성 후:** base URL만 `mocksnap.dev/m/abc123` → `api.myapp.com`으로 바꾸면 끝.

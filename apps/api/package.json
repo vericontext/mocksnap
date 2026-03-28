@@ -1,0 +1,23 @@
+{
+  "name": "@mocksnap/api",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1",
+    "@mocksnap/shared": "workspace:*",
+    "better-sqlite3": "^11",
+    "hono": "^4",
+    "nanoid": "^5"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7",
+    "tsx": "^4",
+    "typescript": "^5"
+  }
+}

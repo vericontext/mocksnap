@@ -1,8 +1,10 @@
 # MockSnap
 
-> Paste JSON, describe in words, or drop an OpenAPI spec — get a live REST + GraphQL API in seconds.
+> Paste JSON, describe in words, or drop an OpenAPI spec — get a live REST + GraphQL API with docs in seconds.
 
-MockSnap is an AI-powered Mock API generator for frontend-backend decoupling. Provide a JSON sample, natural language prompt, or OpenAPI spec — and get a live API instantly.
+**Live Demo:** [mocksnap.dev](https://mocksnap.dev) | **API:** [api.mocksnap.dev](https://api.mocksnap.dev/health) | **GitHub:** [vericontext/mocksnap](https://github.com/vericontext/mocksnap)
+
+MockSnap is an AI-powered Mock API generator for frontend-backend decoupling. Provide a JSON sample, natural language prompt, or OpenAPI spec — and get a live API instantly. No signup, no setup.
 
 ## Features
 
@@ -221,6 +223,15 @@ mocksnap/
 - [ ] SSE/Streaming — `text/event-stream` real-time endpoint
 
 ## Changelog
+
+### v1.0.0 (2026-03-28) — Public Launch
+
+- **Live demo:** [mocksnap.dev](https://mocksnap.dev) deployed (Vercel + Fly.io)
+- "Try it now" one-click demo button — instant Blog API with no setup
+- Mermaid ER diagram auto-generated on dashboard (FK auto-detection, light/dark theme)
+- Light/Dark mode toggle (default: light, saved to localStorage)
+- All UI and docs translated to English for global audience
+- Custom domains: `mocksnap.dev` (frontend) + `api.mocksnap.dev` (API)
 
 ### v0.9.0 (2026-03-28) — Auto-generated API Docs
 

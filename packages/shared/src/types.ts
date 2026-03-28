@@ -48,6 +48,7 @@ export interface CreateMockRequest {
   openapi?: string;
   amplify?: boolean;
   amplifyCount?: number;
+  anthropicApiKey?: string;
 }
 
 export interface MockListItem {

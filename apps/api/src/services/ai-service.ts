@@ -1,19 +1,20 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { FieldDefinition } from '@mocksnap/shared';
 
-const client = new Anthropic();
+function getClient(apiKey?: string): Anthropic {
+  return new Anthropic({ apiKey: apiKey || process.env.ANTHROPIC_API_KEY });
+}
 
 function extractJson(text: string): string {
-  // Try to extract JSON from markdown code blocks first
   const codeBlockMatch = text.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
   if (codeBlockMatch) return codeBlockMatch[1].trim();
-  // Otherwise try to find raw JSON
   const jsonMatch = text.match(/[\[{][\s\S]*[\]}]/);
   if (jsonMatch) return jsonMatch[0].trim();
   return text.trim();
 }
 
-export async function generateFromPrompt(prompt: string): Promise<Record<string, unknown[]>> {
+export async function generateFromPrompt(prompt: string, apiKey?: string): Promise<Record<string, unknown[]>> {
+  const client = getClient(apiKey);
   const response = await client.messages.create({
     model: 'claude-sonnet-4-20250514',
     max_tokens: 4096,
@@ -32,7 +33,6 @@ Rules:
   const text = response.content[0].type === 'text' ? response.content[0].text : '';
   const parsed = JSON.parse(extractJson(text));
 
-  // Validate: must be an object with array values
   if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
     throw new Error('AI returned invalid format: expected an object with array values');
   }
@@ -44,8 +44,10 @@ export async function amplifyData(
   resourceName: string,
   fields: FieldDefinition[],
   seedData: unknown[],
-  count: number
+  count: number,
+  apiKey?: string
 ): Promise<unknown[]> {
+  const client = getClient(apiKey);
   const maxId = seedData.reduce((max, item) => {
     const id = (item as Record<string, unknown>)?.id;
     return typeof id === 'number' && id > max ? id : max;

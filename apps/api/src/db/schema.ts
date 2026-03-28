@@ -6,7 +6,8 @@ export function initializeSchema() {
       id         TEXT PRIMARY KEY,
       name       TEXT,
       created_at TEXT DEFAULT (datetime('now')),
-      updated_at TEXT DEFAULT (datetime('now'))
+      updated_at TEXT DEFAULT (datetime('now')),
+      expires_at TEXT DEFAULT (datetime('now', '+7 days'))
     );
 
     CREATE TABLE IF NOT EXISTS mock_resources (

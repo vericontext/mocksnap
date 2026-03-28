@@ -21,8 +21,10 @@ mocks.post('/', async (c) => {
     return c.json({ error: 'Bad Request', message: '"sample" must be an object or array' }, 400);
   }
 
-  if (body.prompt && !process.env.ANTHROPIC_API_KEY) {
-    return c.json({ error: 'Service Unavailable', message: 'AI features require ANTHROPIC_API_KEY to be configured' }, 503);
+  const needsAI = !!(body.prompt || body.openapi || body.amplify);
+  const hasAI = !!(body.anthropicApiKey || process.env.ANTHROPIC_API_KEY);
+  if (needsAI && !hasAI) {
+    return c.json({ error: 'API Key Required', message: 'AI features require an Anthropic API key. Please provide your key.' }, 400);
   }
 
   try {

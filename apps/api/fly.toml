@@ -1,0 +1,39 @@
+app = "mocksnap-api"
+primary_region = "nrt"
+
+[build]
+  dockerfile = "Dockerfile"
+  [build.args]
+
+[env]
+  PORT = "3001"
+  NODE_ENV = "production"
+  DATABASE_PATH = "/data/mocksnap.db"
+
+[http_service]
+  internal_port = 3001
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    type = "requests"
+    hard_limit = 250
+    soft_limit = 200
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
+
+[mounts]
+  source = "mocksnap_data"
+  destination = "/data"
+
+[checks]
+  [checks.health]
+    type = "http"
+    port = 3001
+    path = "/health"
+    interval = "30s"
+    timeout = "5s"

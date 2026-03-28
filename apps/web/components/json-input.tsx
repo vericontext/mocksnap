@@ -57,9 +57,16 @@ export default function JsonInput() {
   const [openapi, setOpenapi] = useState('');
   const [name, setName] = useState('');
   const [amplify, setAmplify] = useState(true);
+  const [apiKey, setApiKey] = useState(() => typeof window !== 'undefined' ? localStorage.getItem('mocksnap_api_key') || '' : '');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  const saveApiKey = (key: string) => {
+    setApiKey(key);
+    if (key) localStorage.setItem('mocksnap_api_key', key);
+    else localStorage.removeItem('mocksnap_api_key');
+  };
 
   const handleSubmit = async () => {
     setError('');
@@ -76,7 +83,7 @@ export default function JsonInput() {
           setLoading(false);
           return;
         }
-        const mock = await createMock({ name: name || undefined, sample: parsed as Record<string, unknown>, amplify });
+        const mock = await createMock({ name: name || undefined, sample: parsed as Record<string, unknown>, amplify, anthropicApiKey: apiKey || undefined });
         router.push(`/mock/${mock.id}`);
       } else if (mode === 'prompt') {
         const input = prompt.trim();
@@ -85,7 +92,7 @@ export default function JsonInput() {
           setLoading(false);
           return;
         }
-        const mock = await createMock({ name: name || undefined, prompt: input });
+        const mock = await createMock({ name: name || undefined, prompt: input, anthropicApiKey: apiKey || undefined });
         router.push(`/mock/${mock.id}`);
       } else {
         const input = openapi.trim();
@@ -94,7 +101,7 @@ export default function JsonInput() {
           setLoading(false);
           return;
         }
-        const mock = await createMock({ name: name || undefined, openapi: input });
+        const mock = await createMock({ name: name || undefined, openapi: input, anthropicApiKey: apiKey || undefined });
         router.push(`/mock/${mock.id}`);
       }
     } catch (e) {
@@ -115,6 +122,20 @@ export default function JsonInput() {
         placeholder="Mock API name (optional)"
         className="w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm focus:outline-none focus:border-blue-500"
       />
+
+      <details className="text-sm">
+        <summary className="text-gray-400 cursor-pointer hover:text-gray-200">
+          Anthropic API Key {apiKey ? '(saved)' : '(required for AI features)'}
+        </summary>
+        <input
+          type="password"
+          value={apiKey}
+          onChange={(e) => saveApiKey(e.target.value)}
+          placeholder="sk-ant-..."
+          className="w-full mt-2 px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm font-mono focus:outline-none focus:border-blue-500"
+        />
+        <p className="text-xs text-gray-500 mt-1">Your key is stored in your browser only. Never sent to our servers — used directly with Anthropic API.</p>
+      </details>
 
       {/* Tab switcher */}
       <div className="flex border border-gray-700 rounded-lg overflow-hidden">

@@ -3,7 +3,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dbPath = path.resolve(__dirname, '../../data/mocksnap.db');
+const defaultPath = path.resolve(__dirname, '../../data/mocksnap.db');
+const dbPath = process.env.DATABASE_PATH || defaultPath;
 
 const db = new Database(dbPath);
 

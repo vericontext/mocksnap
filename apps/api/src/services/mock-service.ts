@@ -10,22 +10,23 @@ import { API_BASE_URL } from '@mocksnap/shared';
 export async function createMock(request: CreateMockRequest): Promise<MockDefinition> {
   const mockId = nanoid(10);
 
+  const apiKey = request.anthropicApiKey;
+  const hasAI = !!(apiKey || process.env.ANTHROPIC_API_KEY);
+
   let sample: Record<string, unknown>;
   let fromOpenAPI = false;
 
   if (request.openapi) {
-    // OpenAPI spec input → parse and generate data via AI
     const { resources: parsedResources } = parseOpenAPISpec(request.openapi);
-    // Build a prompt from the parsed schema for AI data generation
-    if (process.env.ANTHROPIC_API_KEY) {
+    if (hasAI) {
       const schemaDesc = parsedResources.map((r) =>
         `${r.name}: ${r.fields.map((f) => `${f.name}(${f.type})`).join(', ')}`
       ).join('\n');
       sample = await generateFromPrompt(
-        `Generate realistic sample data for these API resources:\n${schemaDesc}\n10 items per resource, realistic data.`
+        `Generate realistic sample data for these API resources:\n${schemaDesc}\n10 items per resource, realistic data.`,
+        apiKey
       );
     } else {
-      // Without AI, generate minimal placeholder data
       sample = {};
       for (const r of parsedResources) {
         const item: Record<string, unknown> = {};
@@ -40,7 +41,7 @@ export async function createMock(request: CreateMockRequest): Promise<MockDefini
     }
     fromOpenAPI = true;
   } else if (request.prompt && !request.sample) {
-    sample = await generateFromPrompt(request.prompt);
+    sample = await generateFromPrompt(request.prompt, apiKey);
   } else if (request.sample) {
     sample = request.sample;
   } else {
@@ -50,13 +51,13 @@ export async function createMock(request: CreateMockRequest): Promise<MockDefini
   const resources = inferSchema(sample);
 
   // AI data amplification
-  const shouldAmplify = request.amplify !== false && process.env.ANTHROPIC_API_KEY;
+  const shouldAmplify = request.amplify !== false && hasAI;
   const amplifyCount = request.amplifyCount ?? 10;
 
   if (shouldAmplify && !request.prompt && !fromOpenAPI) {
     for (const resource of resources) {
       try {
-        const extraData = await amplifyData(resource.name, resource.fields, resource.seedData, amplifyCount);
+        const extraData = await amplifyData(resource.name, resource.fields, resource.seedData, amplifyCount, apiKey);
         resource.seedData.push(...extraData);
       } catch {
         // If amplification fails, continue with original seed data

@@ -8,6 +8,8 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "mcp": "tsx src/mcp-server.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "start": "node dist/index.js",
     "build": "tsc",
     "lint": "tsc --noEmit"
@@ -31,6 +33,7 @@
     "@types/better-sqlite3": "^7",
     "@types/js-yaml": "^4",
     "tsx": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3"
   }
 }

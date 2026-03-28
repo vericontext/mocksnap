@@ -23,7 +23,10 @@ export interface MockDefinition {
 
 export interface CreateMockRequest {
   name?: string;
-  sample: Record<string, unknown>;
+  sample?: Record<string, unknown>;
+  prompt?: string;
+  amplify?: boolean;
+  amplifyCount?: number;
 }
 
 export interface CreateMockResponse extends MockDefinition {}

@@ -9,9 +9,11 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0",
     "@hono/node-server": "^1",
     "@mocksnap/shared": "workspace:*",
     "better-sqlite3": "^11",
+    "dotenv": "^16",
     "hono": "^4",
     "nanoid": "^5"
   },

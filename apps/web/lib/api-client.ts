@@ -1,12 +1,12 @@
-import type { CreateMockResponse } from '@mocksnap/shared';
+import type { CreateMockRequest, CreateMockResponse } from '@mocksnap/shared';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
-export async function createMock(name: string, sample: unknown): Promise<CreateMockResponse> {
+export async function createMock(request: CreateMockRequest): Promise<CreateMockResponse> {
   const res = await fetch(`${API_URL}/api/mocks`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: name || undefined, sample }),
+    body: JSON.stringify(request),
   });
   if (!res.ok) {
     const err = await res.json();

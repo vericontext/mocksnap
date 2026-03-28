@@ -7,12 +7,25 @@ const mocks = new Hono();
 mocks.post('/', async (c) => {
   const body = await c.req.json<CreateMockRequest>();
 
-  if (!body.sample || typeof body.sample !== 'object') {
-    return c.json({ error: 'Bad Request', message: '"sample" field is required and must be an object or array' }, 400);
+  if (!body.sample && !body.prompt) {
+    return c.json({ error: 'Bad Request', message: 'Either "sample" or "prompt" is required' }, 400);
   }
 
-  const mock = createMock(body);
-  return c.json(mock, 201);
+  if (body.sample && typeof body.sample !== 'object') {
+    return c.json({ error: 'Bad Request', message: '"sample" must be an object or array' }, 400);
+  }
+
+  if (body.prompt && !process.env.ANTHROPIC_API_KEY) {
+    return c.json({ error: 'Service Unavailable', message: 'AI features require ANTHROPIC_API_KEY to be configured' }, 503);
+  }
+
+  try {
+    const mock = await createMock(body);
+    return c.json(mock, 201);
+  } catch (e) {
+    const message = e instanceof Error ? e.message : 'Failed to create mock';
+    return c.json({ error: 'Internal Error', message }, 500);
+  }
 });
 
 mocks.get('/:mockId', (c) => {

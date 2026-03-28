@@ -2,12 +2,39 @@ import { nanoid } from 'nanoid';
 import { db } from '../db/connection.js';
 import { createMockDataTable, dropMockDataTables, insertRow } from '../db/mock-tables.js';
 import { inferSchema } from './schema-inferrer.js';
+import { generateFromPrompt, amplifyData } from './ai-service.js';
 import type { MockDefinition, ResourceDefinition, CreateMockRequest } from '@mocksnap/shared';
 import { API_BASE_URL } from '@mocksnap/shared';
 
-export function createMock(request: CreateMockRequest): MockDefinition {
+export async function createMock(request: CreateMockRequest): Promise<MockDefinition> {
   const mockId = nanoid(10);
-  const resources = inferSchema(request.sample);
+
+  // Resolve sample: either from direct input or AI-generated from prompt
+  let sample: Record<string, unknown>;
+  if (request.prompt && !request.sample) {
+    sample = await generateFromPrompt(request.prompt);
+  } else if (request.sample) {
+    sample = request.sample;
+  } else {
+    throw new Error('Either "sample" or "prompt" is required');
+  }
+
+  const resources = inferSchema(sample);
+
+  // AI data amplification
+  const shouldAmplify = request.amplify !== false && process.env.ANTHROPIC_API_KEY;
+  const amplifyCount = request.amplifyCount ?? 10;
+
+  if (shouldAmplify && !request.prompt) {
+    for (const resource of resources) {
+      try {
+        const extraData = await amplifyData(resource.name, resource.fields, resource.seedData, amplifyCount);
+        resource.seedData.push(...extraData);
+      } catch {
+        // If amplification fails, continue with original seed data
+      }
+    }
+  }
 
   // Insert mock metadata
   db.prepare('INSERT INTO mocks (id, name) VALUES (?, ?)').run(mockId, request.name ?? null);

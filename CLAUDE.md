@@ -43,6 +43,7 @@ pnpm --filter @mocksnap/api mcp   # MCP 서버 (STDIO)
 - 단일 파일: `apps/api/data/mocksnap.db` (gitignore 대상)
 - 메타 테이블: `mocks`, `mock_resources`, `request_logs`
 - 동적 데이터 테이블: `mock_{mockId}_{resource}` — 각 행은 `data` 컬럼에 JSON blob 저장
+- 쿼리: `json_extract(data, '$.field')`로 필터/정렬/검색 수행
 - WAL 모드 활성화
 
 ### 핵심 서비스 (apps/api/src/services/)
@@ -56,7 +57,7 @@ pnpm --filter @mocksnap/api mcp   # MCP 서버 (STDIO)
 ### 라우트 (apps/api/src/routes/)
 
 - `mocks.ts` — `POST/GET/DELETE /api/mocks`, `GET /api/mocks/:id/logs`
-- `dynamic.ts` — `ALL /m/:mockId/:resource/:id?` (REST CRUD + 로깅 + webhook)
+- `dynamic.ts` — `ALL /m/:mockId/:resource/:id?` (REST CRUD + 쿼리 + 관계 + 로깅 + webhook)
 - `graphql.ts` — `ALL /m/:mockId/graphql` (graphql-yoga)
 - `config.ts` — `GET/PATCH /api/mocks/:id/resources/:name/config`
 
@@ -88,6 +89,8 @@ curl -X POST http://localhost:3001/m/{mockId}/graphql \
 
 - `better-sqlite3`는 네이티브 빌드 필요 — `pnpm install` 시 빌드 승인됨 (`pnpm.onlyBuiltDependencies`)
 - Bun 미설치 환경: `@hono/node-server` + `tsx watch`로 Node.js fallback 사용 중
-- AI 기능은 `ANTHROPIC_API_KEY` 없으면 자동 비활성화, 기존 JSON 입력은 정상 동작
+- AI 기능은 BYOK(사용자 키) 또는 서버 `ANTHROPIC_API_KEY` 필요. 둘 다 없으면 AI 비활성화, JSON 입력은 정상 동작
+- 동적 라우트 쿼리: `?field_gte=`, `?sort=&order=`, `?page=&limit=`, `?q=`, `?_expand=`, `?_embed=`
+- 중첩 리소스: `/resource/:id/subResource` — FK 필드(`{singular}Id`)를 자동 감지
 - 동적 테이블명은 SQL 인젝션 방지를 위해 `sanitizeName()`으로 영숫자+언더스코어만 허용
 - `.env` 파일은 `apps/api/.env`에 위치, gitignore 대상

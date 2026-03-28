@@ -6,3 +6,4 @@ apps/api/data/*.db
 .turbo/
 .env
 .env.local
+.playwright-mcp/

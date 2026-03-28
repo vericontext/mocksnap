@@ -8,8 +8,8 @@ type InputMode = 'json' | 'prompt' | 'openapi';
 
 const JSON_PLACEHOLDER = `{
   "users": [
-    { "id": 1, "name": "Kim Minjun", "email": "kim@example.com" },
-    { "id": 2, "name": "Lee Sujin", "email": "lee@example.com" }
+    { "id": 1, "name": "Alex Johnson", "email": "alex@example.com" },
+    { "id": 2, "name": "Sarah Miller", "email": "sarah@example.com" }
   ],
   "posts": [
     { "id": 1, "title": "Hello World", "userId": 1 }
@@ -119,9 +119,9 @@ export default function JsonInput() {
         name: 'Blog API (Demo)',
         sample: {
           users: [
-            { id: 1, name: 'Kim Minjun', email: 'minjun@example.com', age: 28 },
-            { id: 2, name: 'Lee Sujin', email: 'sujin@example.com', age: 32 },
-            { id: 3, name: 'Park Jihye', email: 'jihye@example.com', age: 25 },
+            { id: 1, name: 'Alex Johnson', email: 'alex@example.com', age: 28 },
+            { id: 2, name: 'Sarah Miller', email: 'sarah@example.com', age: 32 },
+            { id: 3, name: 'James Wilson', email: 'james@example.com', age: 25 },
           ],
           posts: [
             { id: 1, title: 'Getting Started with MockSnap', body: 'MockSnap lets you create mock APIs instantly.', userId: 1 },

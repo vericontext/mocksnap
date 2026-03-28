@@ -34,8 +34,8 @@ Leverages Claude API to generate context-aware data.
 Data created via POST is reflected in GET responses. SQLite persists the data.
 
 ```bash
-POST /m/{id}/users  {"name":"Kim"}   # Create
-GET  /m/{id}/users                    # Returns including Kim
+POST /m/{id}/users  {"name":"Alex"}   # Create
+GET  /m/{id}/users                    # Returns including Alex
 ```
 
 ### Response Customization
@@ -112,7 +112,7 @@ curl -X POST http://localhost:3001/api/mocks \
   -d '{
     "name": "My API",
     "sample": {
-      "users": [{"id": 1, "name": "Kim", "email": "kim@test.com"}],
+      "users": [{"id": 1, "name": "Alex", "email": "alex@test.com"}],
       "posts": [{"id": 1, "title": "Hello", "userId": 1}]
     }
   }'
@@ -272,7 +272,7 @@ mocksnap/
 
 ### v0.4.0 (2026-03-28) — Works Like a Real API
 
-- Filtering: `?age_gte=20&age_lte=30`, `?name=Kim`, `?status_ne=deleted`, `?name_like=kim`
+- Filtering: `?age_gte=20&age_lte=30`, `?name=Alex`, `?status_ne=deleted`, `?name_like=alex`
 - Sorting: `?sort=name&order=asc`
 - Pagination: `?page=2&limit=10` + `X-Total-Count` response header
 - Full-text search: `?q=kim`

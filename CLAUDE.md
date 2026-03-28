@@ -74,7 +74,7 @@ No test framework adopted yet. Manual verification via curl:
 # Create Mock
 curl -X POST http://localhost:3001/api/mocks \
   -H "Content-Type: application/json" \
-  -d '{"name":"test","sample":{"users":[{"id":1,"name":"Kim"}]},"amplify":false}'
+  -d '{"name":"test","sample":{"users":[{"id":1,"name":"Alex"}]},"amplify":false}'
 
 # Verify CRUD
 curl http://localhost:3001/m/{mockId}/users

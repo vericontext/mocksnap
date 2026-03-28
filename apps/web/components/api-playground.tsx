@@ -41,8 +41,8 @@ export default function ApiPlayground({ baseUrl }: Props) {
     : '';
 
   return (
-    <div className="border border-gray-700 rounded-lg overflow-hidden">
-      <div className="px-4 py-3 bg-gray-800 border-b border-gray-700">
+    <div className="border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden">
+      <div className="px-4 py-3 bg-gray-100 dark:bg-gray-800 border-b border-gray-300 dark:border-gray-700">
         <h3 className="font-medium">API Playground</h3>
       </div>
       <div className="p-4 space-y-3">
@@ -50,7 +50,7 @@ export default function ApiPlayground({ baseUrl }: Props) {
           <select
             value={method}
             onChange={(e) => setMethod(e.target.value)}
-            className="px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm font-mono cursor-pointer"
+            className="px-3 py-2 bg-gray-100 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-sm font-mono cursor-pointer"
           >
             {METHODS.map((m) => (
               <option key={m} value={m}>{m}</option>
@@ -60,7 +60,7 @@ export default function ApiPlayground({ baseUrl }: Props) {
             type="text"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            className="flex-1 px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm font-mono focus:outline-none focus:border-blue-500"
+            className="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-sm font-mono focus:outline-none focus:border-blue-500"
           />
           <button
             onClick={handleSend}
@@ -77,7 +77,7 @@ export default function ApiPlayground({ baseUrl }: Props) {
             onChange={(e) => setBody(e.target.value)}
             placeholder='{"key": "value"}'
             rows={4}
-            className="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg font-mono text-sm focus:outline-none focus:border-blue-500 resize-y"
+            className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg font-mono text-sm focus:outline-none focus:border-blue-500 resize-y"
           />
         )}
 
@@ -89,7 +89,7 @@ export default function ApiPlayground({ baseUrl }: Props) {
               <span className="text-xs text-gray-400">Status:</span>
               <span className={`text-sm font-mono font-bold ${statusColor}`}>{response.status}</span>
             </div>
-            <pre className="p-3 bg-gray-900 rounded-lg text-sm font-mono overflow-x-auto max-h-80 overflow-y-auto">
+            <pre className="p-3 bg-gray-100 dark:bg-gray-900 rounded-lg text-sm font-mono overflow-x-auto max-h-80 overflow-y-auto">
               {JSON.stringify(response.data, null, 2)}
             </pre>
           </div>

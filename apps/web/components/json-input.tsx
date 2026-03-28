@@ -120,11 +120,11 @@ export default function JsonInput() {
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder="Mock API name (optional)"
-        className="w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+        className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:border-blue-500"
       />
 
       <details className="text-sm">
-        <summary className="text-gray-400 cursor-pointer hover:text-gray-200">
+        <summary className="text-gray-500 dark:text-gray-400 cursor-pointer hover:text-gray-800 dark:hover:text-gray-200">
           Anthropic API Key {apiKey ? '(saved)' : '(required for AI features)'}
         </summary>
         <input
@@ -138,13 +138,13 @@ export default function JsonInput() {
       </details>
 
       {/* Tab switcher */}
-      <div className="flex border border-gray-700 rounded-lg overflow-hidden">
+      <div className="flex border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden">
         {TABS.map((tab) => (
           <button
             key={tab.key}
             onClick={() => { setMode(tab.key); setError(''); }}
             className={`flex-1 px-4 py-2 text-sm font-medium transition-colors cursor-pointer ${
-              mode === tab.key ? 'bg-blue-600 text-white' : 'bg-gray-900 text-gray-400 hover:text-gray-200'
+              mode === tab.key ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-900 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
             }`}
           >
             {tab.label}
@@ -159,9 +159,9 @@ export default function JsonInput() {
             onChange={(e) => { setJson(e.target.value); setError(''); }}
             placeholder={JSON_PLACEHOLDER}
             rows={16}
-            className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg font-mono text-sm focus:outline-none focus:border-blue-500 resize-y"
+            className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg font-mono text-sm focus:outline-none focus:border-blue-500 resize-y"
           />
-          <label className="flex items-center gap-2 text-sm text-gray-400 cursor-pointer">
+          <label className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 cursor-pointer">
             <input
               type="checkbox"
               checked={amplify}
@@ -180,7 +180,7 @@ export default function JsonInput() {
             onChange={(e) => { setPrompt(e.target.value); setError(''); }}
             placeholder={PROMPT_PLACEHOLDER}
             rows={6}
-            className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-sm focus:outline-none focus:border-blue-500 resize-y"
+            className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:border-blue-500 resize-y"
           />
           <p className="text-xs text-gray-500">
             AI will design the API structure and generate ~10 realistic data items per resource.
@@ -195,7 +195,7 @@ export default function JsonInput() {
             onChange={(e) => { setOpenapi(e.target.value); setError(''); }}
             placeholder={OPENAPI_PLACEHOLDER}
             rows={16}
-            className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg font-mono text-sm focus:outline-none focus:border-blue-500 resize-y"
+            className="w-full px-4 py-3 bg-gray-100 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg font-mono text-sm focus:outline-none focus:border-blue-500 resize-y"
           />
           <p className="text-xs text-gray-500">
             Paste an OpenAPI 3.x spec (JSON or YAML). AI will generate realistic data matching the schema.

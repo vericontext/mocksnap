@@ -27,7 +27,7 @@ export default function MockDashboard() {
         <div className="text-center">
           <h1 className="text-2xl font-bold text-red-400 mb-2">Not Found</h1>
           <p className="text-gray-400">{error}</p>
-          <a href="/" className="text-blue-400 hover:underline mt-4 inline-block">Back to home</a>
+          <a href="/" className="text-blue-500 dark:text-blue-400 hover:underline mt-4 inline-block">Back to home</a>
         </div>
       </main>
     );
@@ -44,9 +44,9 @@ export default function MockDashboard() {
   return (
     <main className="max-w-4xl mx-auto px-4 py-10">
       <div className="mb-8">
-        <a href="/" className="text-sm text-gray-400 hover:text-gray-200">MockSnap</a>
+        <a href="/" className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">MockSnap</a>
         <h1 className="text-2xl font-bold mt-1">{mock.name || `Mock ${mock.id}`}</h1>
-        <p className="text-sm text-gray-400 mt-1">Created {new Date(mock.createdAt).toLocaleString()}</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Created {new Date(mock.createdAt).toLocaleString()}</p>
       </div>
 
       <div className="space-y-8">

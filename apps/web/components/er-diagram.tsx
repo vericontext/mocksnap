@@ -32,9 +32,9 @@ export default function ERDiagram({ mockId }: Props) {
   if (!mermaidText) return null;
 
   return (
-    <div className="border border-gray-700 rounded-lg overflow-hidden">
+    <div className="border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden">
       <div
-        className="px-4 py-3 bg-gray-800 border-b border-gray-700 flex items-center justify-between cursor-pointer"
+        className="px-4 py-3 bg-gray-100 dark:bg-gray-800 border-b border-gray-300 dark:border-gray-700 flex items-center justify-between cursor-pointer"
         onClick={() => setOpen(!open)}
       >
         <h3 className="font-medium">ER Diagram</h3>
@@ -53,7 +53,7 @@ export default function ERDiagram({ mockId }: Props) {
           )}
           <details className="mt-3">
             <summary className="text-xs text-gray-500 cursor-pointer">Mermaid source</summary>
-            <pre className="mt-2 p-2 bg-gray-900 rounded text-xs font-mono overflow-x-auto">{mermaidText}</pre>
+            <pre className="mt-2 p-2 bg-gray-100 dark:bg-gray-900 rounded text-xs font-mono overflow-x-auto">{mermaidText}</pre>
           </details>
         </div>
       )}

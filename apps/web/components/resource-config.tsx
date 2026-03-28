@@ -25,7 +25,7 @@ export default function ResourceConfigPanel({ mockId, resource }: Props) {
   };
 
   return (
-    <div className="p-3 bg-gray-900 rounded-lg space-y-3 text-sm">
+    <div className="p-3 bg-gray-100 dark:bg-gray-900 rounded-lg space-y-3 text-sm">
       <div className="flex items-center gap-3">
         <label className="text-gray-400 w-24">Delay (ms)</label>
         <input
@@ -35,7 +35,7 @@ export default function ResourceConfigPanel({ mockId, resource }: Props) {
           step={100}
           value={config.delay || 0}
           onChange={(e) => setConfig({ ...config, delay: Number(e.target.value) })}
-          className="w-24 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+          className="w-24 px-2 py-1 bg-gray-200 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded text-sm"
         />
         <input
           type="range"
@@ -67,7 +67,7 @@ export default function ResourceConfigPanel({ mockId, resource }: Props) {
         <select
           value={config.errorStatus || 500}
           onChange={(e) => setConfig({ ...config, errorStatus: Number(e.target.value) })}
-          className="px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm cursor-pointer"
+          className="px-2 py-1 bg-gray-200 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded text-sm cursor-pointer"
         >
           <option value={400}>400 Bad Request</option>
           <option value={401}>401 Unauthorized</option>
@@ -89,7 +89,7 @@ export default function ResourceConfigPanel({ mockId, resource }: Props) {
           value={config.forceStatus || 0}
           onChange={(e) => setConfig({ ...config, forceStatus: Number(e.target.value) || undefined })}
           placeholder="0 = disabled"
-          className="w-24 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+          className="w-24 px-2 py-1 bg-gray-200 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded text-sm"
         />
         <span className="text-xs text-gray-500">Set to 0 to disable</span>
       </div>
@@ -101,7 +101,7 @@ export default function ResourceConfigPanel({ mockId, resource }: Props) {
           value={config.webhookUrl || ''}
           onChange={(e) => setConfig({ ...config, webhookUrl: e.target.value || undefined })}
           placeholder="https://webhook.site/..."
-          className="flex-1 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+          className="flex-1 px-2 py-1 bg-gray-200 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded text-sm"
         />
       </div>
 
@@ -126,7 +126,7 @@ export default function ResourceConfigPanel({ mockId, resource }: Props) {
           max={100000}
           value={config.rateLimit || 1000}
           onChange={(e) => setConfig({ ...config, rateLimit: Number(e.target.value) || undefined })}
-          className="w-24 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm"
+          className="w-24 px-2 py-1 bg-gray-200 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded text-sm"
         />
         <span className="text-xs text-gray-500">requests/hour (X-RateLimit headers)</span>
       </div>

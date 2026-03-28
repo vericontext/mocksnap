@@ -32,8 +32,8 @@ export default function RequestLogs({ mockId }: Props) {
   useEffect(() => { load(); }, [mockId]);
 
   return (
-    <div className="border border-gray-700 rounded-lg overflow-hidden">
-      <div className="px-4 py-3 bg-gray-800 border-b border-gray-700 flex items-center justify-between">
+    <div className="border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden">
+      <div className="px-4 py-3 bg-gray-100 dark:bg-gray-800 border-b border-gray-300 dark:border-gray-700 flex items-center justify-between">
         <h3 className="font-medium">Request Logs</h3>
         <button
           onClick={load}
@@ -46,11 +46,11 @@ export default function RequestLogs({ mockId }: Props) {
       {logs.length === 0 ? (
         <div className="p-4 text-sm text-gray-500">No requests logged yet. Make some API calls to see them here.</div>
       ) : (
-        <div className="divide-y divide-gray-800 max-h-96 overflow-y-auto">
+        <div className="divide-y divide-gray-200 dark:divide-gray-800 max-h-96 overflow-y-auto">
           {logs.map((log) => (
             <div key={log.id}>
               <div
-                className="px-4 py-2 flex items-center gap-3 hover:bg-gray-800/50 cursor-pointer text-sm"
+                className="px-4 py-2 flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-800/50 cursor-pointer text-sm"
                 onClick={() => setExpanded(expanded === log.id ? null : log.id)}
               >
                 <span className={`font-mono text-xs font-bold w-16 ${METHOD_COLORS[log.method] || 'text-gray-400'}`}>
@@ -67,7 +67,7 @@ export default function RequestLogs({ mockId }: Props) {
                   {log.requestBody && (
                     <div>
                       <span className="text-xs text-gray-500">Request Body:</span>
-                      <pre className="mt-1 p-2 bg-gray-900 rounded text-xs font-mono overflow-x-auto max-h-32 overflow-y-auto">
+                      <pre className="mt-1 p-2 bg-gray-100 dark:bg-gray-900 rounded text-xs font-mono overflow-x-auto max-h-32 overflow-y-auto">
                         {(() => { try { return JSON.stringify(JSON.parse(log.requestBody), null, 2); } catch { return log.requestBody; } })()}
                       </pre>
                     </div>
@@ -75,7 +75,7 @@ export default function RequestLogs({ mockId }: Props) {
                   {log.responseBody && (
                     <div>
                       <span className="text-xs text-gray-500">Response Body:</span>
-                      <pre className="mt-1 p-2 bg-gray-900 rounded text-xs font-mono overflow-x-auto max-h-32 overflow-y-auto">
+                      <pre className="mt-1 p-2 bg-gray-100 dark:bg-gray-900 rounded text-xs font-mono overflow-x-auto max-h-32 overflow-y-auto">
                         {(() => { try { return JSON.stringify(JSON.parse(log.responseBody), null, 2); } catch { return log.responseBody; } })()}
                       </pre>
                     </div>

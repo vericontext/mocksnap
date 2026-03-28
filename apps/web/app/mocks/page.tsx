@@ -30,7 +30,7 @@ export default function MocksListPage() {
     <main className="max-w-4xl mx-auto px-4 py-10">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <a href="/" className="text-sm text-gray-400 hover:text-gray-200">MockSnap</a>
+          <a href="/" className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">MockSnap</a>
           <h1 className="text-2xl font-bold mt-1">My Mock APIs</h1>
         </div>
         <a
@@ -54,12 +54,12 @@ export default function MocksListPage() {
             <div
               key={mock.id}
               onClick={() => router.push(`/mock/${mock.id}`)}
-              className="border border-gray-700 rounded-lg p-4 hover:border-gray-500 cursor-pointer transition-colors"
+              className="border border-gray-300 dark:border-gray-700 rounded-lg p-4 hover:border-gray-400 dark:hover:border-gray-500 cursor-pointer transition-colors"
             >
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-medium">{mock.name || `Mock ${mock.id}`}</h3>
-                  <p className="text-sm text-gray-400 mt-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                     {mock.resourceCount} resource{mock.resourceCount !== 1 ? 's' : ''} &middot; Created{' '}
                     {new Date(mock.createdAt).toLocaleDateString()}
                   </p>

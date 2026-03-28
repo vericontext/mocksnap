@@ -191,6 +191,17 @@ mocksnap/
 - [x] **관계 확장** — `GET /posts?_expand=author&_embed=comments`
 - [ ] **Auth 시뮬레이션** — API Key, Bearer Token 검증
 
+### Production-grade Mock (High Priority)
+
+- [ ] **ETag + 304** — 조건부 요청 (`If-None-Match` → `304 Not Modified`), React Query/SWR 캐시 테스트
+- [ ] **데이터 리셋** — `POST /api/mocks/:id/reset` 시드 데이터 복원, E2E 테스트 필수
+- [ ] **자동 timestamp** — POST 시 `createdAt`, PATCH 시 `updatedAt` 자동 주입
+- [ ] **커서 기반 페이지네이션** — `?cursor=xxx&limit=10`, Stripe/Shopify 표준
+- [ ] **Faker.js 스마트 데이터** — 필드명에서 의미 감지 (email→이메일, phone→전화번호)
+- [ ] **Idempotency Key** — `Idempotency-Key` 헤더로 중복 요청 방지 (Stripe 패턴)
+- [ ] **Webhook HMAC 서명** — `X-MockSnap-Signature` HMAC-SHA256 검증 헤더
+- [ ] **지연 분포** — 고정 delay 외에 uniform/normal 분포 지원
+
 ### 플랫폼 확장
 
 - [ ] Record & Replay — 프로덕션 API 프록시 녹화 → Mock 자동 생성
@@ -200,6 +211,8 @@ mocksnap/
 - [ ] Monaco Editor — 스키마 편집기 통합
 - [ ] SDK/CLI — `npx mocksnap create "유저 API"`
 - [ ] SQL DDL 입력 — `CREATE TABLE` 문에서 Mock 자동 생성
+- [ ] OpenAPI 역생성 — Mock → OpenAPI 3.x 스펙 내보내기
+- [ ] SSE/Streaming — `text/event-stream` 실시간 엔드포인트
 
 ## Changelog
 

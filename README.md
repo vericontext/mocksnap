@@ -189,6 +189,8 @@ mocksnap/
 - [x] **전체 검색** — `GET /users?q=kim`
 - [x] **중첩 리소스** — `GET /users/1/posts` (유저 1의 게시글)
 - [x] **관계 확장** — `GET /posts?_expand=author&_embed=comments`
+- [x] **깊은 관계** — `?_expand=post,post.user` 다단계 dot notation (최대 3단계)
+- [x] **GraphQL 관계 타입** — FK 자동 감지, `{ users { posts { comments { user } } } }`
 - [x] **Auth 시뮬레이션** — API Key, Bearer Token 검증
 
 ### Production-grade Mock (High Priority)

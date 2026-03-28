@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
-import { createMock, getMock, deleteMock, listMocks, modifyMockWithChat } from '../services/mock-service.js';
+import { createMock, getMock, deleteMock, listMocks, modifyMockWithChat, amplifyMockData } from '../services/mock-service.js';
 import { db } from '../db/connection.js';
 import { resetTable } from '../db/mock-tables.js';
-import type { CreateMockRequest, ModifyMockRequest } from '@mocksnap/shared';
+import type { CreateMockRequest, ModifyMockRequest, AmplifyRequest } from '@mocksnap/shared';
 
 const mocks = new Hono();
 
@@ -65,6 +65,24 @@ mocks.post('/:mockId/chat', async (c) => {
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Failed to modify mock';
     return c.json({ error: 'Internal Error', message }, 500);
+  }
+});
+
+// POST /api/mocks/:mockId/amplify — generate more data with Faker
+mocks.post('/:mockId/amplify', async (c) => {
+  const mockId = c.req.param('mockId');
+  const body = await c.req.json<AmplifyRequest>();
+  const count = Math.min(body.count ?? 50, 1000); // Cap at 1000
+
+  try {
+    const results = amplifyMockData(mockId, body.resource, count);
+    return c.json({
+      message: `Added ${results.reduce((sum, r) => sum + r.added, 0)} items across ${results.length} resource(s)`,
+      results,
+    });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : 'Failed to amplify';
+    return c.json({ error: 'Bad Request', message }, 400);
   }
 });
 

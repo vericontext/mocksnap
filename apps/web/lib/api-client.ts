@@ -1,4 +1,4 @@
-import type { CreateMockRequest, CreateMockResponse, MockListItem, ModifyMockResponse, RequestLog, ResourceConfig } from '@mocksnap/shared';
+import type { AmplifyResponse, CreateMockRequest, CreateMockResponse, MockListItem, ModifyMockResponse, RequestLog, ResourceConfig } from '@mocksnap/shared';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -19,6 +19,19 @@ export async function fetchMock(mockId: string): Promise<CreateMockResponse> {
   const res = await fetch(`${API_URL}/api/mocks/${mockId}`);
   if (!res.ok) {
     throw new Error('Mock not found');
+  }
+  return res.json();
+}
+
+export async function amplifyMockData(mockId: string, resource?: string, count?: number): Promise<AmplifyResponse> {
+  const res = await fetch(`${API_URL}/api/mocks/${mockId}/amplify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ resource, count }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.message || 'Failed to amplify');
   }
   return res.json();
 }

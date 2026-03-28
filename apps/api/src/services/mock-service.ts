@@ -1,6 +1,6 @@
 import { nanoid } from 'nanoid';
 import { db } from '../db/connection.js';
-import { createMockDataTable, dropMockDataTables, insertRow, resetTable } from '../db/mock-tables.js';
+import { createMockDataTable, dropMockDataTables, insertRow, resetTable, getAllRows } from '../db/mock-tables.js';
 import { inferSchema, generateFakerData } from './schema-inferrer.js';
 import { generateFromPrompt, amplifyData, modifyMockSchema } from './ai-service.js';
 import { parseOpenAPISpec } from './openapi-parser.js';
@@ -249,4 +249,45 @@ export async function modifyMockWithChat(
   // Return updated mock
   const mock = getMock(mockId)!;
   return { changes, mock };
+}
+
+export function amplifyMockData(
+  mockId: string,
+  resourceName?: string,
+  count: number = 50
+): { resource: string; added: number; total: number }[] {
+  const resources = db.prepare(
+    resourceName
+      ? 'SELECT name, schema_json FROM mock_resources WHERE mock_id = ? AND name = ?'
+      : 'SELECT name, schema_json FROM mock_resources WHERE mock_id = ?'
+  ).all(...(resourceName ? [mockId, resourceName] : [mockId])) as {
+    name: string; schema_json: string;
+  }[];
+
+  if (resources.length === 0) throw new Error(resourceName ? `Resource "${resourceName}" not found` : 'Mock not found');
+
+  const results: { resource: string; added: number; total: number }[] = [];
+
+  for (const resource of resources) {
+    const fields = JSON.parse(resource.schema_json);
+    const existing = getAllRows(mockId, resource.name);
+    const maxId = existing.reduce((max: number, item: unknown) => {
+      const id = (item as Record<string, unknown>)?.id;
+      return typeof id === 'number' && id > max ? id : max;
+    }, 0);
+
+    const newData = generateFakerData(fields, count, maxId + 1);
+    for (const item of newData) {
+      insertRow(mockId, resource.name, item);
+    }
+
+    // Update seed_data
+    const allData = getAllRows(mockId, resource.name);
+    db.prepare('UPDATE mock_resources SET seed_data = ? WHERE mock_id = ? AND name = ?')
+      .run(JSON.stringify(allData), mockId, resource.name);
+
+    results.push({ resource: resource.name, added: count, total: allData.length });
+  }
+
+  return results;
 }

@@ -94,6 +94,16 @@ export interface ModifyMockResponse {
   mock: MockDefinition;
 }
 
+export interface AmplifyRequest {
+  resource?: string;
+  count?: number;
+}
+
+export interface AmplifyResponse {
+  message: string;
+  results: { resource: string; added: number; total: number }[];
+}
+
 export interface QueryOptions {
   filters?: Record<string, string>;
   sort?: string;

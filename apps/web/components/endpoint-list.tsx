@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { ResourceDefinition } from '@mocksnap/shared';
 import ResourceConfigPanel from './resource-config';
+import { amplifyMockData } from '@/lib/api-client';
 
 interface Props {
   mockId: string;
@@ -22,6 +23,24 @@ const METHOD_COLORS: Record<string, string> = {
 export default function EndpointList({ mockId, resources, baseUrl, graphqlUrl }: Props) {
   const [copied, setCopied] = useState('');
   const [openConfig, setOpenConfig] = useState<string | null>(null);
+  const [amplifyCount, setAmplifyCount] = useState<Record<string, number>>({});
+  const [amplifying, setAmplifying] = useState<string | null>(null);
+  const [amplifyResult, setAmplifyResult] = useState<string | null>(null);
+
+  const handleAmplify = async (resourceName: string) => {
+    const count = amplifyCount[resourceName] || 50;
+    setAmplifying(resourceName);
+    setAmplifyResult(null);
+    try {
+      const result = await amplifyMockData(mockId, resourceName, count);
+      const r = result.results[0];
+      setAmplifyResult(`Added ${r.added} items to ${r.resource} (total: ${r.total})`);
+    } catch (e) {
+      setAmplifyResult(e instanceof Error ? e.message : 'Failed');
+    } finally {
+      setAmplifying(null);
+    }
+  };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -67,6 +86,10 @@ export default function EndpointList({ mockId, resources, baseUrl, graphqlUrl }:
         </div>
       </div>
 
+      {amplifyResult && (
+        <p className="text-sm text-green-600 dark:text-green-400">{amplifyResult}</p>
+      )}
+
       {resources.map((resource) => (
         <div key={resource.name} className="border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden">
           <div className="px-4 py-2 bg-gray-100 dark:bg-gray-800 border-b border-gray-300 dark:border-gray-700 flex items-center justify-between">
@@ -76,12 +99,29 @@ export default function EndpointList({ mockId, resources, baseUrl, graphqlUrl }:
                 Fields: {resource.fields.map((f) => `${f.name} (${f.type})`).join(', ')}
               </p>
             </div>
-            <button
-              onClick={() => setOpenConfig(openConfig === resource.name ? null : resource.name)}
-              className="px-3 py-1 text-xs bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600 rounded transition-colors cursor-pointer"
-            >
-              {openConfig === resource.name ? 'Hide Settings' : 'Settings'}
-            </button>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min={1}
+                max={1000}
+                value={amplifyCount[resource.name] || 50}
+                onChange={(e) => setAmplifyCount({ ...amplifyCount, [resource.name]: Number(e.target.value) })}
+                className="w-16 px-2 py-1 text-xs bg-gray-100 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded"
+              />
+              <button
+                onClick={() => handleAmplify(resource.name)}
+                disabled={amplifying === resource.name}
+                className="px-3 py-1 text-xs bg-green-600 hover:bg-green-500 text-white rounded transition-colors cursor-pointer disabled:bg-gray-300 dark:disabled:bg-gray-700"
+              >
+                {amplifying === resource.name ? '...' : 'Amplify'}
+              </button>
+              <button
+                onClick={() => setOpenConfig(openConfig === resource.name ? null : resource.name)}
+                className="px-3 py-1 text-xs bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600 rounded transition-colors cursor-pointer"
+              >
+                {openConfig === resource.name ? 'Hide Settings' : 'Settings'}
+              </button>
+            </div>
           </div>
 
           {openConfig === resource.name && (

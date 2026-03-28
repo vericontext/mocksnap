@@ -31,8 +31,8 @@ ER diagram, endpoints, API docs, and GraphQL schema update instantly.
 Both endpoints are auto-generated from the same schema.
 
 ```
-REST:    http://localhost:3001/m/{mockId}/users
-GraphQL: http://localhost:3001/m/{mockId}/graphql
+REST:    https://api.mocksnap.dev/m/{mockId}/users
+GraphQL: https://api.mocksnap.dev/m/{mockId}/graphql
 ```
 
 ### AI-Powered Realistic Data
@@ -88,10 +88,6 @@ claude mcp add mocksnap -- npx tsx /path/to/apps/api/src/mcp-server.ts
 MCP tools: `create_mock`, `list_mocks`, `get_mock`, `delete_mock`
 
 ## Quick Start
-
-### Deploy your own
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/vericontext/mocksnap&root-directory=apps/web)
 
 ### Requirements
 

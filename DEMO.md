@@ -131,35 +131,39 @@ Enable envelope mode for `{ data, meta, links }` wrapping with RFC 7807 errors.
 
 ## Demo 6: Production Scenario Testing (30s)
 
+Test edge cases your frontend needs to handle. All configured from the **dashboard → Settings button** on each resource.
+
 ### Auth simulation
-```bash
-PATCH .../config → {"auth": {"type": "bearer", "key": "my-secret"}}
-GET  /books                                     → 401 Unauthorized
-GET  /books -H "Authorization: Bearer my-secret" → 200 OK
-```
+
+1. Dashboard → `/users` resource → **Settings** → set Auth to Bearer with key `my-secret` → **Save Config**
+2. Now API calls without the token get rejected:
+   - `GET /users` → 401 Unauthorized
+   - `GET /users` with `Authorization: Bearer my-secret` → 200 OK
+3. Test your login flow, protected routes, and permission-based UI.
 
 ### Error & latency simulation
-```bash
-PATCH .../config → {"errorRate": 0.5, "errorStatus": 503, "delay": {"type": "uniform", "min": 1000, "max": 3000}}
-# 50% chance of 503 + random 1-3s delay
-```
+
+1. Dashboard → Settings → set **Error rate** to 50%, **Error status** to 503, **Delay** to 2000ms → Save
+2. API responses: half succeed after 2 seconds, half return 503
+3. Test your loading spinners, retry logic, and error boundaries.
 
 ### Idempotency & caching
-```bash
-# Same Idempotency-Key → same response, no duplicate
-POST /orders -H "Idempotency-Key: abc" → 201 Created
-POST /orders -H "Idempotency-Key: abc" → 201 (cached, no new item)
 
-# ETag → 304 Not Modified
-GET  /books                              → ETag: "a1b2c3..."
-GET  /books -H 'If-None-Match: "a1b2c3"' → 304
-```
+Use the **API Playground** on the dashboard:
+
+- Send same POST with `Idempotency-Key: abc` twice → only 1 item created
+- Send GET → note the **ETag** header → send again with `If-None-Match` → 304 Not Modified
+- Test your React Query / SWR cache revalidation logic.
 
 ---
 
-## Demo 7: GraphQL with Auto Relations (15s)
+## Demo 7: GraphQL Playground (15s)
 
-FK fields are detected automatically. No schema configuration:
+Every mock gets a built-in **GraphiQL IDE** — no setup needed.
+
+1. On the dashboard, click the **GraphQL URL** (e.g. `https://api.mocksnap.dev/m/{id}/graphql`)
+2. GraphiQL opens in your browser with auto-complete and docs
+3. Try a nested query:
 
 ```graphql
 {
@@ -177,7 +181,7 @@ FK fields are detected automatically. No schema configuration:
 }
 ```
 
-REST and GraphQL share the same data — POST via REST, query via GraphQL.
+FK fields (`authorId`, `bookId`, `userId`) are auto-detected → relation types generated automatically. REST and GraphQL share the same data.
 
 ---
 

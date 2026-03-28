@@ -1,6 +1,8 @@
 {
   "name": "@mocksnap/api",
-  "version": "0.0.1",
+  "version": "1.0.0",
+  "description": "MockSnap API server — Hono + SQLite + GraphQL",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "scripts": {

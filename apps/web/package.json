@@ -1,6 +1,8 @@
 {
   "name": "@mocksnap/web",
-  "version": "0.0.1",
+  "version": "1.0.0",
+  "description": "MockSnap web frontend — Next.js 15 + Tailwind CSS",
+  "license": "MIT",
   "private": true,
   "scripts": {
     "dev": "next dev --port 3000",

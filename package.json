@@ -1,5 +1,8 @@
 {
   "name": "mocksnap",
+  "version": "1.0.0",
+  "description": "AI-powered Mock API generator. Paste JSON, describe in words, or drop an OpenAPI spec — get a live REST + GraphQL API with docs in seconds.",
+  "license": "MIT",
   "private": true,
   "packageManager": "pnpm@10.32.1",
   "scripts": {

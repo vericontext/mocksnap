@@ -1,6 +1,8 @@
 {
   "name": "@mocksnap/shared",
-  "version": "0.0.1",
+  "version": "1.0.0",
+  "description": "MockSnap shared TypeScript types and constants",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "exports": {

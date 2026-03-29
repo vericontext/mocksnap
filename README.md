@@ -324,6 +324,10 @@ mocksnap/
 - Mock list management page
 - Web UI (Next.js) + API Playground
 
+## Follow
+
+Follow [@vericontext](https://x.com/vericontext) on X for updates and new features.
+
 ## License
 
 MIT

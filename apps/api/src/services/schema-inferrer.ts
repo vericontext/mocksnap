@@ -47,13 +47,32 @@ const FAKER_MAP: Record<string, () => unknown> = {
   longitude: () => faker.location.longitude(),
 };
 
-export function generateSmartValue(fieldName: string, fieldType: FieldType): unknown {
+// Fields where Faker produces better variety than seed sampling
+const HIGH_VARIETY_FIELDS = new Set([
+  'name', 'firstname', 'first_name', 'lastname', 'last_name',
+  'email', 'phone', 'address', 'city', 'country', 'zip', 'zipcode',
+  'username', 'password', 'avatar', 'image', 'url', 'website',
+  'company', 'bio',
+]);
+
+export function generateSmartValue(fieldName: string, fieldType: FieldType, existingValues?: unknown[]): unknown {
   const lower = fieldName.toLowerCase();
 
-  // Exact match
-  if (FAKER_MAP[fieldName]) return FAKER_MAP[fieldName]();
+  // For high-variety fields (names, emails, etc.), always use Faker for unique values
+  if (HIGH_VARIETY_FIELDS.has(lower)) {
+    if (FAKER_MAP[fieldName]) return FAKER_MAP[fieldName]();
+    for (const [pattern, gen] of Object.entries(FAKER_MAP)) {
+      if (lower.includes(pattern.toLowerCase())) return gen();
+    }
+  }
 
-  // Partial match
+  // For all other fields, prefer seed data sampling (preserves realistic patterns)
+  if (existingValues && existingValues.length > 0) {
+    return faker.helpers.arrayElement(existingValues as unknown[]);
+  }
+
+  // Faker match
+  if (FAKER_MAP[fieldName]) return FAKER_MAP[fieldName]();
   for (const [pattern, gen] of Object.entries(FAKER_MAP)) {
     if (lower.includes(pattern.toLowerCase())) return gen();
   }
@@ -67,14 +86,27 @@ export function generateSmartValue(fieldName: string, fieldType: FieldType): unk
   }
 }
 
-export function generateFakerData(fields: FieldDefinition[], count: number, startId: number = 1): unknown[] {
+export function generateFakerData(fields: FieldDefinition[], count: number, startId: number = 1, seedData?: unknown[]): unknown[] {
+  // Build a map of existing values per field for sampling
+  const seedValues: Record<string, unknown[]> = {};
+  if (seedData && seedData.length > 0) {
+    for (const item of seedData) {
+      const obj = item as Record<string, unknown>;
+      for (const [key, value] of Object.entries(obj)) {
+        if (key === 'id' || value === null || value === undefined) continue;
+        if (!seedValues[key]) seedValues[key] = [];
+        if (!seedValues[key].includes(value)) seedValues[key].push(value);
+      }
+    }
+  }
+
   return Array.from({ length: count }, (_, i) => {
     const item: Record<string, unknown> = {};
     for (const field of fields) {
       if (field.name === 'id') {
         item.id = startId + i;
       } else {
-        item[field.name] = generateSmartValue(field.name, field.type);
+        item[field.name] = generateSmartValue(field.name, field.type, seedValues[field.name]);
       }
     }
     return item;

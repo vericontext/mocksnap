@@ -70,7 +70,7 @@ export async function createMock(request: CreateMockRequest): Promise<MockDefini
         const id = (item as Record<string, unknown>)?.id;
         return typeof id === 'number' && id > max ? id : max;
       }, 0);
-      const fakerData = generateFakerData(resource.fields, amplifyCount, maxId + 1);
+      const fakerData = generateFakerData(resource.fields, amplifyCount, maxId + 1, resource.seedData);
       resource.seedData.push(...fakerData);
     }
   }
@@ -276,7 +276,7 @@ export function amplifyMockData(
       return typeof id === 'number' && id > max ? id : max;
     }, 0);
 
-    const newData = generateFakerData(fields, count, maxId + 1);
+    const newData = generateFakerData(fields, count, maxId + 1, existing);
     for (const item of newData) {
       insertRow(mockId, resource.name, item);
     }

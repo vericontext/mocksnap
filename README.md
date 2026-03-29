@@ -6,6 +6,10 @@
 
 MockSnap is an AI-powered Mock API generator for frontend-backend decoupling. Provide a JSON sample, natural language prompt, or OpenAPI spec — and get a live API instantly. No signup, no setup.
 
+## Demo
+
+https://github.com/user-attachments/assets/8d01bf64-536d-4867-b004-8f2b091fed3c
+
 ## Features
 
 ### 3 Input Modes

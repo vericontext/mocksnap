@@ -12,11 +12,11 @@ No JSON, no config. Just describe what you want.
 
 1. Go to [mocksnap.dev](https://mocksnap.dev) → "Natural Language" tab
 2. Type:
-   ```
-   Online bookstore API. Authors, books, reviews, users.
-   Books linked to authors, reviews linked to books and users.
-   5 items of realistic data each.
-   ```
+```
+Online bookstore API. Authors, books, reviews, users.
+Books linked to authors, reviews linked to books and users.
+5 items of realistic data each.
+```
 3. "Generate API" → **3 seconds later you have:**
 
 | What you get | URL |

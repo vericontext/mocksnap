@@ -16,12 +16,14 @@ export const metadata: Metadata = {
     url: 'https://mocksnap.dev',
     siteName: 'MockSnap',
     type: 'website',
+    images: [{ url: '/og.png', width: 1200, height: 630 }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'MockSnap — AI-powered Mock API Generator',
     description: 'Describe your API in words — get live REST + GraphQL with docs in seconds.',
     creator: '@vericontext',
+    images: ['/og.png'],
   },
 };
 

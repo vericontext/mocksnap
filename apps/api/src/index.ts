@@ -72,6 +72,6 @@ app.route('/m', dynamic);
 // Health check
 app.get('/health', (c) => c.json({ status: 'ok' }));
 
-serve({ fetch: app.fetch, port: API_PORT }, (info) => {
-  console.log(`MockSnap API running on http://localhost:${info.port}`);
+serve({ fetch: app.fetch, port: API_PORT, hostname: '0.0.0.0' }, (info) => {
+  console.log(`MockSnap API running on http://0.0.0.0:${info.port}`);
 });

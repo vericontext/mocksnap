@@ -7,8 +7,22 @@ const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] });
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'MockSnap',
-  description: 'Paste JSON, get a live REST API instantly',
+  title: 'MockSnap — AI-powered Mock API Generator',
+  description: 'Describe your API in words, paste JSON, or drop an OpenAPI spec — get a live REST + GraphQL API with docs in seconds.',
+  metadataBase: new URL('https://mocksnap.dev'),
+  openGraph: {
+    title: 'MockSnap — AI-powered Mock API Generator',
+    description: 'Describe your API in words — get live REST + GraphQL with docs in seconds. No signup needed.',
+    url: 'https://mocksnap.dev',
+    siteName: 'MockSnap',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'MockSnap — AI-powered Mock API Generator',
+    description: 'Describe your API in words — get live REST + GraphQL with docs in seconds.',
+    creator: '@vericontext',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

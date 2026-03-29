@@ -190,6 +190,26 @@ export function resetTable(mockId: string, resourceName: string, seedData: unkno
   }
 }
 
+export function patchNewFieldsToExistingRows(mockId: string, resourceName: string, newFieldDefaults: Record<string, unknown>) {
+  if (Object.keys(newFieldDefaults).length === 0) return;
+  const name = tableName(mockId, resourceName);
+  const rows = db.prepare(`SELECT _row_id, data FROM "${name}"`).all() as { _row_id: number; data: string }[];
+  const update = db.prepare(`UPDATE "${name}" SET data = ? WHERE _row_id = ?`);
+  for (const row of rows) {
+    const obj = JSON.parse(row.data);
+    let changed = false;
+    for (const [field, defaultValue] of Object.entries(newFieldDefaults)) {
+      if (!(field in obj)) {
+        obj[field] = defaultValue;
+        changed = true;
+      }
+    }
+    if (changed) {
+      update.run(JSON.stringify(obj), row._row_id);
+    }
+  }
+}
+
 export function deleteRow(mockId: string, resourceName: string, id: string): boolean {
   const name = tableName(mockId, resourceName);
   const result = db.prepare(

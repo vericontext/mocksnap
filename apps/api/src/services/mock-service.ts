@@ -1,6 +1,6 @@
 import { nanoid } from 'nanoid';
 import { db } from '../db/connection.js';
-import { createMockDataTable, dropMockDataTables, insertRow, resetTable, getAllRows } from '../db/mock-tables.js';
+import { createMockDataTable, dropMockDataTables, insertRow, resetTable, getAllRows, patchNewFieldsToExistingRows } from '../db/mock-tables.js';
 import { inferSchema, generateFakerData } from './schema-inferrer.js';
 import { generateFromPrompt, amplifyData, modifyMockSchema } from './ai-service.js';
 import { parseOpenAPISpec } from './openapi-parser.js';
@@ -228,10 +228,29 @@ export async function modifyMockWithChat(
     const fieldsJson = JSON.stringify(resource.fields);
 
     if (existingNames.has(resource.name)) {
-      // Update existing
-      db.prepare('UPDATE mock_resources SET schema_json = ?, seed_data = ? WHERE mock_id = ? AND name = ?')
-        .run(fieldsJson, seedJson, mockId, resource.name);
-      resetTable(mockId, resource.name, resource.seedData);
+      // Update existing — schema only, preserve data
+      const oldFieldsJson = currentResources.find((r) => r.name === resource.name)?.schema_json || '[]';
+      const oldFields = JSON.parse(oldFieldsJson) as { name: string }[];
+      const oldFieldNames = new Set(oldFields.map((f) => f.name));
+
+      // Find new fields that didn't exist before
+      const newFieldDefaults: Record<string, unknown> = {};
+      for (const field of resource.fields) {
+        if (!oldFieldNames.has(field.name) && field.name !== 'id') {
+          // Get default value from AI-generated sample data
+          const sampleItem = resource.seedData[0] as Record<string, unknown> | undefined;
+          newFieldDefaults[field.name] = sampleItem?.[field.name] ?? null;
+        }
+      }
+
+      // Update schema metadata
+      db.prepare('UPDATE mock_resources SET schema_json = ? WHERE mock_id = ? AND name = ?')
+        .run(fieldsJson, mockId, resource.name);
+
+      // Patch new fields into existing rows (preserves all existing data)
+      if (Object.keys(newFieldDefaults).length > 0) {
+        patchNewFieldsToExistingRows(mockId, resource.name, newFieldDefaults);
+      }
     } else {
       // Create new
       db.prepare('INSERT INTO mock_resources (mock_id, name, schema_json, seed_data) VALUES (?, ?, ?, ?)')

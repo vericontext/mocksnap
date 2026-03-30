@@ -254,7 +254,7 @@ export default function JsonInput() {
       <button
         onClick={handleSubmit}
         disabled={loading}
-        className="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-300 dark:disabled:bg-gray-700 text-white disabled:text-gray-400 rounded-lg font-medium transition-colors cursor-pointer"
+        className="w-full py-3 border-2 border-blue-600 dark:border-blue-500 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-500 dark:hover:text-white disabled:border-gray-300 dark:disabled:border-gray-700 disabled:text-gray-400 rounded-lg font-medium transition-colors cursor-pointer"
       >
         {loading
           ? isAI ? 'AI is generating data...' : 'Generating...'

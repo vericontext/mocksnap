@@ -153,6 +153,7 @@ export function getMock(mockId: string): MockDefinition | null {
       };
     }),
     baseUrl: `${API_BASE_URL}/m/${mockId}`,
+    graphqlUrl: `${API_BASE_URL}/m/${mockId}/graphql`,
     createdAt: mock.created_at,
   };
 }

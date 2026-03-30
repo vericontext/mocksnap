@@ -49,7 +49,10 @@ export default function ChatPanel({ mockId, onMockUpdated }: Props) {
     <div className="border border-gray-300 dark:border-gray-700 rounded-lg overflow-hidden">
       <div className="px-4 py-3 bg-gray-100 dark:bg-gray-800 border-b border-gray-300 dark:border-gray-700">
         <h3 className="font-medium">Modify API</h3>
-        <p className="text-xs text-gray-500 mt-0.5">Describe changes in natural language. Requires Anthropic API key.</p>
+        <p className="text-xs text-gray-500 mt-0.5">
+          Describe changes in natural language.
+          {!apiKey && <span className="text-amber-500 dark:text-amber-400"> Set your Anthropic API key on the home page to enable this feature.</span>}
+        </p>
       </div>
 
       {history.length > 0 && (
@@ -81,8 +84,8 @@ export default function ChatPanel({ mockId, onMockUpdated }: Props) {
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-          placeholder='e.g. "Add a tags resource linked to posts" or "Add email field to users"'
-          disabled={loading}
+          placeholder={apiKey ? 'e.g. "Add a tags resource linked to posts" or "Add email field to users"' : 'API key required — set it on the home page first'}
+          disabled={loading || !apiKey}
           className="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:border-blue-500"
         />
         <button
